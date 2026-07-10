@@ -77,16 +77,13 @@ def test_gitignore_respected():
         with open(os.path.join(tmp, ".gitignore"), "w") as f:
             f.write(ignore_content)
         rules = IgnoreRules(tmp)
-
         build_dir = os.path.join(tmp, "build")
         os.makedirs(build_dir, exist_ok=True)
         assert rules.is_ignored(os.path.join(build_dir, "out.o"))
-
         log_path = os.path.join(tmp, "app.log")
         with open(log_path, "w") as f:
             f.write("")
         assert rules.is_ignored(log_path)
-
         py_path = os.path.join(tmp, "app.py")
         with open(py_path, "w") as f:
             f.write("")

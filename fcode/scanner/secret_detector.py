@@ -28,5 +28,5 @@ def detect_secrets(content: str) -> tuple[str, bool]:
 def _redact_line(m: re.Match) -> str:
     prefix = m.group(1) if m.lastindex and m.group(1) else ""
     if m.group(0).startswith("-----"):
-        return "[REDACTED]"
-    return f"{prefix}\"{REDACTION_MARKER}\""
+        return REDACTION_MARKER
+    return f'{prefix}"{REDACTION_MARKER}"'

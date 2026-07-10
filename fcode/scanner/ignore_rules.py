@@ -2,22 +2,15 @@
 
 import os
 import fnmatch
-from pathlib import PurePosixPath
 
 
 HARDCODED_IGNORED_DIRS = frozenset({
     ".git", ".fcode", "node_modules", "__pycache__", ".venv", "venv",
 })
 
-HARDCODED_IGNORED_FILES = frozenset({
-    ".env",
-})
+HARDCODED_IGNORED_FILES = frozenset({".env"})
 
-HARDCODED_IGNORED_PATTERNS = frozenset({
-    ".env.*",
-    "*.pyc",
-    "*.pyo",
-})
+HARDCODED_IGNORED_PATTERNS = frozenset({".env.*", "*.pyc", "*.pyo"})
 
 IGNORE_FILE_NAMES = (".gitignore", ".fcodeignore")
 
@@ -72,7 +65,7 @@ class IgnoreRules:
             if self._match(pattern, rel):
                 return True
 
-        for dir_path, patterns in self._gitignore_patterns:
+        for _dir_path, patterns in self._gitignore_patterns:
             for pattern in patterns:
                 if self._match(pattern, rel):
                     return True

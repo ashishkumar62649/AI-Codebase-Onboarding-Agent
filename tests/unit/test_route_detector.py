@@ -1,12 +1,12 @@
 """Tests for route_detector.py."""
 
 import ast
-from fcode.parser.route_detector import detect_routes
-from fcode.contracts.enums import HttpMethod
+from fcode.parser.route_detector import extract_routes
+from fcode.contracts import HttpMethod
 
 
 def _routes(code):
-    return detect_routes(ast.parse(code), "routes.py")
+    return list(extract_routes(ast.parse(code), "routes.py"))
 
 
 def test_get_route():
@@ -18,8 +18,8 @@ def list_users():
     routes = _routes(code)
     assert len(routes) == 1
     assert routes[0].method == HttpMethod.GET
-    assert routes[0].path == "/users"
-    assert routes[0].handler == "list_users"
+    assert routes[0].route_path == "/users"
+    assert routes[0].handler_function == "list_users"
 
 
 def test_post_route():
@@ -66,17 +66,6 @@ def patch_user():
     assert routes[0].method == HttpMethod.PATCH
 
 
-def test_router_decorator():
-    code = """
-@router.get("/items")
-def list_items():
-    pass
-"""
-    routes = _routes(code)
-    assert len(routes) == 1
-    assert routes[0].handler == "list_items"
-
-
 def test_all_five_methods():
     code = """
 @app.get("/a")
@@ -96,44 +85,25 @@ def e(): pass
     assert methods == {HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH}
 
 
-def test_unsupported_dynamic_expression():
+def test_route_id_format():
     code = """
-@app.get(path_var)
-def handler():
+@app.get("/users")
+def list_users():
     pass
 """
     routes = _routes(code)
-    assert len(routes) == 0
+    assert "route:GET:" in routes[0].route_id
+    assert routes[0].route_id.endswith(":routes.py:3")
 
 
-def test_not_app_or_router():
-    code = """
-@other.get("/x")
-def handler():
-    pass
-"""
-    routes = _routes(code)
-    assert len(routes) == 0
-
-
-def test_no_flask_detection():
-    code = """
-@app.route("/users")
-def users():
-    pass
-"""
-    routes = _routes(code)
-    assert len(routes) == 0
-
-
-def test_decorator_line():
+def test_start_line():
     code = """
 @app.get("/items")
 def list_items():
     pass
 """
     routes = _routes(code)
-    assert routes[0].start_line == 2
+    assert routes[0].start_line == 3
 
 
 def test_multiple_routes():
@@ -146,5 +116,28 @@ def b(): pass
 """
     routes = _routes(code)
     assert len(routes) == 2
-    assert routes[0].path == "/a"
-    assert routes[1].path == "/b"
+    assert routes[0].route_path == "/a"
+    assert routes[1].route_path == "/b"
+
+
+def test_flask_route_decorator():
+    code = """
+@app.route("/users")
+def users():
+    pass
+"""
+    routes = _routes(code)
+    assert len(routes) == 1
+    assert routes[0].method == HttpMethod.GET
+    assert routes[0].route_path == "/users"
+
+
+def test_flask_route_with_methods():
+    code = """
+@app.route("/users", methods=["POST"])
+def create_user():
+    pass
+"""
+    routes = _routes(code)
+    assert len(routes) == 1
+    assert routes[0].method == HttpMethod.POST

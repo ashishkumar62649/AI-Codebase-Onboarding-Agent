@@ -1,58 +1,88 @@
-"""Route detection — FastAPI-style route detection from decorators."""
+"""Route detection — detect Flask/FastAPI route decorators in AST."""
 
 import ast
+from typing import Generator
 
-from fcode.contracts.enums import HttpMethod
-from fcode.contracts.models import ParsedRoute
+from fcode.contracts import Confidence, HttpMethod, ParsedRoute
 
-
-DECORATOR_METHODS = {
-    "get": HttpMethod.GET,
-    "post": HttpMethod.POST,
-    "put": HttpMethod.PUT,
-    "delete": HttpMethod.DELETE,
-    "patch": HttpMethod.PATCH,
-}
+FLASK_APP_ATTRIBUTES = {"route", "get", "post", "put", "delete", "patch"}
+FASTAPI_ATTRIBUTES = {"get", "post", "put", "delete", "patch"}
 
 
-def detect_routes(tree: ast.AST, file_path: str) -> list[ParsedRoute]:
-    routes: list[ParsedRoute] = []
+def extract_routes(tree: ast.AST, file_path: str) -> Generator[ParsedRoute, None, None]:
     for node in ast.walk(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
-        for decorator in node.decorator_list:
-            route = _parse_decorator(decorator, node)
-            if route is not None:
-                routes.append(route)
-    routes.sort(key=lambda r: r.start_line)
-    return routes
+        for deco in node.decorator_list:
+            result = _parse_decorator(deco)
+            if result:
+                method, route_path = result
+                route_id = f"route:{method.value}:{route_path}:{file_path}:{node.lineno}"
+                yield ParsedRoute(
+                    route_id=route_id,
+                    route_path=route_path,
+                    method=method,
+                    handler_function=node.name,
+                    start_line=node.lineno,
+                    confidence=Confidence.EXTRACTED,
+                )
 
 
-def _parse_decorator(decorator: ast.expr, handler: ast.AST) -> ParsedRoute | None:
-    if not isinstance(decorator, ast.Call):
-        return None
-    func = decorator.func
-    if not isinstance(func, ast.Attribute):
-        return None
-    if not isinstance(func.value, ast.Name):
-        return None
-    decorator_obj = func.value.id
-    if decorator_obj not in ("app", "router"):
-        return None
-    method_name = func.attr
-    http_method = DECORATOR_METHODS.get(method_name)
-    if http_method is None:
-        return None
-    if not decorator.args:
-        return None
-    path_arg = decorator.args[0]
-    if not isinstance(path_arg, ast.Constant) or not isinstance(path_arg.value, str):
-        return None
-    route_path = path_arg.value
-    route = ParsedRoute(
-        method=http_method,
-        path=route_path,
-        handler=handler.name,
-        start_line=decorator.lineno,
-    )
-    return route
+def _parse_decorator(deco: ast.expr) -> tuple[HttpMethod, str] | None:
+    if isinstance(deco, ast.Attribute) and deco.attr in FLASK_APP_ATTRIBUTES:
+        if deco.attr == "route":
+            return HttpMethod.GET, _extract_flask_route_path(deco) or "/"
+        return HttpMethod(deco.attr.upper()), "/"
+
+    if isinstance(deco, ast.Call):
+        if isinstance(deco.func, ast.Attribute):
+            if deco.func.attr in FLASK_APP_ATTRIBUTES:
+                path = _extract_flask_route_args(deco) or "/"
+                methods = _extract_flask_methods(deco)
+                if deco.func.attr == "route" and methods:
+                    return methods[0], path
+                if deco.func.attr == "route":
+                    return HttpMethod.GET, path
+                return HttpMethod(deco.func.attr.upper()), path
+            if deco.func.attr in FASTAPI_ATTRIBUTES:
+                path = _extract_fastapi_route_args(deco) or "/"
+                return HttpMethod(deco.func.attr.upper()), path
+
+        if isinstance(deco.func, ast.Attribute) and deco.func.attr == "route" and isinstance(deco.func.value, ast.Attribute) and deco.func.value.attr == "app":
+            path = _extract_flask_route_args(deco) or "/"
+            methods = _extract_flask_methods(deco)
+            if methods:
+                return methods[0], path
+            return HttpMethod.GET, path
+
+    return None
+
+
+def _extract_flask_route_path(deco: ast.Attribute) -> str | None:
+    return None
+
+
+def _extract_flask_route_args(deco: ast.Call) -> str | None:
+    if deco.args and isinstance(deco.args[0], ast.Constant) and isinstance(deco.args[0].value, str):
+        return deco.args[0].value
+    return None
+
+
+def _extract_flask_methods(deco: ast.Call) -> list[HttpMethod]:
+    for kw in deco.keywords:
+        if kw.arg == "methods" and isinstance(kw.value, ast.List):
+            methods = []
+            for elt in kw.value.elts:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                    try:
+                        methods.append(HttpMethod(elt.value.upper()))
+                    except ValueError:
+                        pass
+            return methods
+    return []
+
+
+def _extract_fastapi_route_args(deco: ast.Call) -> str | None:
+    if deco.args and isinstance(deco.args[0], ast.Constant) and isinstance(deco.args[0].value, str):
+        return deco.args[0].value
+    return None
