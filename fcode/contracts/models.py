@@ -194,12 +194,17 @@ class GraphBuildResult:
 @dataclass
 class CodeChunk:
     chunk_id: str
-    text: str
+    file_id: str
     chunk_type: ChunkType
-    source_file: str
+    content: str
     start_line: int
     end_line: int
-    embedding: Optional[list[float]] = None
+    file_path: str
+    language: Optional[str] = None
+    symbol_id: Optional[str] = None
+    symbol_name: Optional[str] = None
+    content_hash: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

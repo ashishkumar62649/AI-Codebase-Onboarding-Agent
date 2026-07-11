@@ -387,7 +387,7 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 **Dependencies:** Scanner/Parser Agent (needs parser output format — `ParsedFile`, `ParsedSymbol`, `ParsedRoute`)
 
 **Expected Outputs:**
-- `fcode/chunking/chunker.py` — semantic chunk creation (Python: file_summary, function, class, method, route, test; Markdown/RST: readme_section by heading; Config: config chunks at 100-line blocks; Generic text: no chunks)
+- `fcode/chunking/chunker.py` — semantic chunk creation (Python: file_summary, function, class, method, route, test; Markdown: readme_section by Markdown heading; RST: readme_section by RST section heading; Config: config chunks at 100-line blocks; Generic text: no chunks) with input validation (scanned/parsed file matching)
 - `fcode/embeddings/encoder.py` — Sentence Transformers encoding (device='cpu', batch=100, dimension=384, local-only loading, no hardcoded cache path, per-chunk failure handling, embedding_count verification)
 
 **Required Tests (owned by Chunking/Embeddings Agent):**
