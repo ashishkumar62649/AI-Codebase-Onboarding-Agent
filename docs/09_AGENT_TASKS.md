@@ -75,7 +75,7 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 **Expected Outputs:**
 - `fcode/contracts/__init__.py` — package init with `__all__`
 - `fcode/contracts/enums.py` — `IndexPhase`, `IndexState`, `ParseStatus`, `FileType`, `SymbolType`, `GraphNodeType`, `GraphRelation`, `HttpMethod`, `Confidence`, `ChunkType`, `SearchMode`, `DiagnosticSeverity`, `SupportedSetupAgent`
-- `fcode/contracts/models.py` — all dataclasses (`RepoInput`, `ScannedFile`, `SkipFileDiagnostic`, `ScanResult`, `ParsedSymbol`, `ParsedImport`, `ParsedRoute`, `ParsedFile`, `GraphBuildResult`, `CodeChunk`, `EmbeddingRecord`, `EmbeddingBatchResult`, `StoredChunkRef`, `IndexCounts`, `IndexRunResult`, `IndexDiagnostic`, `IndexStatusRecord`, `DoctorCheck`, `DoctorResult`, `EvidenceItem`, `RetrievalCandidate`, `FCodeConfig`, `ToolResult`, `ToolError`, `EmbeddingInput`, `EmbeddingMetadata`, `GraphNodeInput`, `GraphEdgeInput`)
+- `fcode/contracts/models.py` — all dataclasses (`RepoInput`, `ScannedFile`, `SkipFileDiagnostic`, `ScanResult`, `ParsedSymbol`, `ParsedImport`, `ParsedRoute`, `ParsedFile`, `GraphBuildResult`, `CodeChunk`, `EmbeddingRecord`, `EmbeddingBatchResult`, `StoredChunkRef`, `IndexBuildResult`, `IndexCounts`, `IndexRunResult`, `IndexDiagnostic`, `IndexStatusRecord`, `DoctorCheck`, `DoctorResult`, `EvidenceItem`, `RetrievalCandidate`, `FCodeConfig`, `ToolResult`, `ToolError`, `EmbeddingInput`, `EmbeddingMetadata`, `GraphNodeInput`, `GraphEdgeInput`)
 - `fcode/contracts/errors.py` — `ErrorCode`, `McpErrorCode`
 - `fcode/contracts/interfaces.py` — protocol interfaces for all feature modules
 
@@ -427,8 +427,14 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 ### WP5 Step 1 — Complete
 
 Step 1 established indexing contracts (`IndexCounts`, `IndexDiagnostic`, `IndexRunResult` with validation),
-the pure `IndexStateMachine` (no I/O), and updated documentation. The indexing pipeline is not yet
-implemented. See WP5 Step 1 report for full details.
+the pure `IndexStateMachine` (no I/O), and updated documentation.
+
+### WP5 Step 2 — Complete
+
+Step 2 implemented `IndexService.build_through_chunking()` — repository validation, scanner invocation,
+parser candidate selection with recoverable errors, chunker invocation, all validation, and in-memory
+result construction. Ends in CHUNKING state on success. No storage, embeddings, or graph work performed.
+See WP5 Step 2 report for full details.
 
 ### Remaining WP5 Steps
 

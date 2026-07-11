@@ -59,7 +59,7 @@ fcode CLI (Typer)
 
 The CLI is thin. It parses arguments and calls service modules. No business logic in CLI handlers.
 
-**Pipeline orchestration:** The `fcode/indexing/index_service.py` module owns pipeline orchestration. It controls status transitions, executes cleanup rules, maps fatal errors to the error catalog, and contains no parser/storage/chunking algorithms.
+**Pipeline orchestration:** The `fcode/indexing/index_service.py` module owns pipeline orchestration. It controls status transitions, executes cleanup rules, maps fatal errors to the error catalog, and contains no parser/storage/chunking algorithms. The `IndexService.build_through_chunking()` method orchestrates config validation, scanner call, parser loop with recoverable error handling, and chunker call — producing an `IndexBuildResult` with in-memory scan, parse, and chunk data.
 
 ## 5. Indexer Architecture
 

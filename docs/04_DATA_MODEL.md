@@ -770,6 +770,24 @@ In-memory result of a single indexing attempt.
 `validate()` confirms: count validity, diagnostic validity, state/phase mapping,
 COMPLETE has no fatal diagnostics, ERROR has fatal diagnostics or error strings.
 
+### IndexBuildResult
+
+Complete in-memory output of `IndexService.build_through_chunking()` (scan → parse → chunk).
+
+| Field | Type | Default | Meaning |
+|---|---|---|---|
+| run_result | IndexRunResult | IndexRunResult() | Pipeline run metadata (state, phase, counts, diagnostics) |
+| completed_phase | Optional[IndexPhase] | None | Highest phase that finished before C phase |
+| state_history | tuple[IndexState, ...] | (PENDING,) | Immutable ordered sequence of states visited |
+| persistent_replacement_started | bool | False | True only after STORING entered |
+| scan_result | Optional[ScanResult] | None | Raw output of the scanner step |
+| parsed_files | list[ParsedFile] | [] | Output of the parser step |
+| chunks | list[CodeChunk] | [] | Output of the chunker step |
+| embedding_result | Optional[EmbeddingBatchResult] | None | Filled in later WP5 steps |
+| graph_result | Optional[GraphBuildResult] | None | Filled in later WP5 steps |
+
+Field order is fixed. All fields directly accessible after the method returns.
+
 ## 27. Config File Schema
 
 See `03_SYSTEM_ARCHITECTURE.md` Section 21 for the full `.fcode/config.json` schema definition. The config file stores index configuration, embedding model settings, storage paths, and privacy settings.

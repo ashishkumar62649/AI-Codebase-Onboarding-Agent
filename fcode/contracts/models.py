@@ -236,9 +236,6 @@ class StoredChunkRef:
     source_file: str
 
 
-# ── Index pipeline results ──────────────────────────────────────────────────
-
-
 @dataclass
 class IndexCounts:
     scanned: int = 0
@@ -347,6 +344,22 @@ class IndexStatusRecord:
     error_count: int = 0
     errors: list[str] = field(default_factory=list)
     message: Optional[str] = None
+
+
+# ── Index pipeline results ──────────────────────────────────────────────────
+
+
+@dataclass
+class IndexBuildResult:
+    run_result: IndexRunResult = field(default_factory=IndexRunResult)
+    completed_phase: Optional[IndexPhase] = None
+    state_history: tuple[IndexState, ...] = (IndexState.PENDING,)
+    persistent_replacement_started: bool = False
+    scan_result: Optional[ScanResult] = None
+    parsed_files: list[ParsedFile] = field(default_factory=list)
+    chunks: list[CodeChunk] = field(default_factory=list)
+    embedding_result: Optional[EmbeddingBatchResult] = None
+    graph_result: Optional[GraphBuildResult] = None
 
 
 # ── Doctor results ──────────────────────────────────────────────────────────
