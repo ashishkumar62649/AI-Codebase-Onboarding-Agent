@@ -869,6 +869,7 @@ class IndexService:
             return d, d.message
 
         seen_node_ids: set[str] = set()
+        seen_node_record_ids: set[str] = set()
 
         for node in nodes:
             if not isinstance(node, GraphNodeInput):
@@ -901,6 +902,27 @@ class IndexService:
                 )
                 return d, d.message
             seen_node_ids.add(node.node_id)
+
+            if not node.record_id:
+                d = IndexDiagnostic(
+                    code="graph_failed",
+                    message="Graph node has an empty record_id.",
+                    phase=IndexPhase.GRAPH,
+                    recoverable=False,
+                    severity=DiagnosticSeverity.ERROR,
+                )
+                return d, d.message
+
+            if node.record_id in seen_node_record_ids:
+                d = IndexDiagnostic(
+                    code="graph_failed",
+                    message="Graph contains duplicate node record IDs.",
+                    phase=IndexPhase.GRAPH,
+                    recoverable=False,
+                    severity=DiagnosticSeverity.ERROR,
+                )
+                return d, d.message
+            seen_node_record_ids.add(node.record_id)
 
             if not node.node_type:
                 d = IndexDiagnostic(
@@ -944,6 +966,7 @@ class IndexService:
                     return d, d.message
 
         seen_edge_ids: set[str] = set()
+        seen_canonical_edges: set[tuple[str, str, str, str, str]] = set()
 
         for edge in edges:
             if not isinstance(edge, GraphEdgeInput):
@@ -956,17 +979,44 @@ class IndexService:
                 )
                 return d, d.message
 
-            if edge.record_id:
-                if edge.record_id in seen_edge_ids:
-                    d = IndexDiagnostic(
-                        code="graph_failed",
-                        message="Graph contains duplicate edge record IDs.",
-                        phase=IndexPhase.GRAPH,
-                        recoverable=False,
-                        severity=DiagnosticSeverity.ERROR,
-                    )
-                    return d, d.message
-                seen_edge_ids.add(edge.record_id)
+            if not edge.record_id:
+                d = IndexDiagnostic(
+                    code="graph_failed",
+                    message="Graph edge has an empty record_id.",
+                    phase=IndexPhase.GRAPH,
+                    recoverable=False,
+                    severity=DiagnosticSeverity.ERROR,
+                )
+                return d, d.message
+
+            if edge.record_id in seen_edge_ids:
+                d = IndexDiagnostic(
+                    code="graph_failed",
+                    message="Graph contains duplicate edge record IDs.",
+                    phase=IndexPhase.GRAPH,
+                    recoverable=False,
+                    severity=DiagnosticSeverity.ERROR,
+                )
+                return d, d.message
+            seen_edge_ids.add(edge.record_id)
+
+            canonical_edge = (
+                edge.source_node_id or "",
+                edge.target_node_id or "",
+                edge.relation.value if edge.relation else "",
+                edge.source_file or "",
+                edge.source_location or "",
+            )
+            if canonical_edge in seen_canonical_edges:
+                d = IndexDiagnostic(
+                    code="graph_failed",
+                    message="Graph contains duplicate canonical edge tuples.",
+                    phase=IndexPhase.GRAPH,
+                    recoverable=False,
+                    severity=DiagnosticSeverity.ERROR,
+                )
+                return d, d.message
+            seen_canonical_edges.add(canonical_edge)
 
             if not edge.source_node_id:
                 d = IndexDiagnostic(

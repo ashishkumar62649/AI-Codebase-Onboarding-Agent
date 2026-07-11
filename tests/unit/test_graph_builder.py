@@ -441,7 +441,13 @@ def test_node_record_id_format():
     pf.symbols.append(_sym("foo", SymbolType.FUNCTION))
     result = build([pf])
     for n in result.nodes:
-        assert n.record_id == "gn:" + n.node_id, f"record_id {n.record_id} != gn:{n.node_id}"
+        assert n.record_id.startswith("gn:"), f"node record_id {n.record_id} missing gn: prefix"
+        hex_part = n.record_id[len("gn:"):]
+        assert len(hex_part) == 64, f"node record_id hex part {hex_part!r} is not sha256-length"
+        int(hex_part, 16)
+        assert n.record_id != "gn:" + n.node_id, (
+            "node record_id must not be ambiguous colon concatenation — it must hash canonical identity"
+        )
 
 
 def test_edge_record_id_format():
@@ -467,3 +473,147 @@ def test_route_payload_from_parsed_route_not_symbol():
     assert len(route_nodes) == 1
     assert route_nodes[0].label == "GET /test", f"expected 'GET /test', got '{route_nodes[0].label}'"
     assert route_nodes[0].source_file == "routes.py"
+
+
+# ── Adversarial: colons and repeated separators ──────────────────────────────
+
+
+def test_colons_in_node_id_dont_collide_record_ids():
+    """Adversarial: a node_id containing colons must produce a record_id derived
+    from canonical fields, not ambiguous colon concatenation."""
+    pf = _pf("a:b.py")
+    pf.symbols.append(_sym("x:y:z", SymbolType.FUNCTION))
+    r1 = build([pf])
+    r2 = build([pf])
+    rids1 = sorted(n.record_id for n in r1.nodes)
+    rids2 = sorted(n.record_id for n in r2.nodes)
+    assert rids1 == rids2
+    # Every record id is a sha256 digest under the gn: prefix.
+    for rid in rids1:
+        assert rid.startswith("gn:")
+        hex_part = rid[len("gn:"):]
+        assert len(hex_part) == 64
+        int(hex_part, 16)
+
+
+def test_repeated_separators_in_paths_record_id_stable():
+    """Adversarial: file paths with repeated slashes and colons in name parts
+    produce stable, collision-safe record IDs from canonical identity."""
+    weird_path = "a//b::c///d.py"
+    pf1 = _pf(weird_path)
+    pf1.symbols.append(_sym("weird", SymbolType.FUNCTION))
+    r1 = build([pf1])
+    r2 = build([pf1])
+    assert sorted(n.record_id for n in r1.nodes) == sorted(
+        n.record_id for n in r2.nodes
+    )
+    file_node = [n for n in r1.nodes if n.node_type == GraphNodeType.FILE][0]
+    assert file_node.node_id == f"file:{weird_path}"
+    # The record_id is NOT `gn:file:<weird_path>`; it's a hash digest.
+    assert file_node.record_id != "gn:" + file_node.node_id
+    assert file_node.record_id.startswith("gn:")
+    assert len(file_node.record_id) == len("gn:") + 64
+
+
+def test_two_distinct_canonical_identities_produce_distinct_record_ids():
+    """Different canonical identities produce different record IDs (collision
+    is statistically impossible with SHA-256 but enforced here directly)."""
+    pf = _pf("mod.py")
+    pf.symbols.append(_sym("first", SymbolType.FUNCTION, start_line=1))
+    pf.symbols.append(_sym("second", SymbolType.FUNCTION, start_line=5))
+    pf.imports.append(_imp("os", line_number=10))
+    r = build([pf])
+    rids = [n.record_id for n in r.nodes]
+    assert len(set(rids)) == len(rids)
+    nids = [n.node_id for n in r.nodes]
+    assert len(set(nids)) == len(nids)
+
+
+def test_same_canonical_identity_produces_same_record_id():
+    """Identical canonical identities must produce identical record IDs
+    across rebuilds (stable derivation, no timestamps, no UUID4)."""
+    pf1 = _pf("mod.py")
+    pf1.symbols.append(_sym("foo", SymbolType.FUNCTION, start_line=1))
+    r1 = build([pf1])
+
+    pf2 = _pf("mod.py")
+    pf2.symbols.append(_sym("foo", SymbolType.FUNCTION, start_line=1))
+    r2 = build([pf2])
+
+    foo_rids1 = sorted(n.record_id for n in r1.nodes if n.node_id == "sym:foo")
+    foo_rids2 = sorted(n.record_id for n in r2.nodes if n.node_id == "sym:foo")
+    assert foo_rids1 == foo_rids2
+    assert len(foo_rids1) == len(foo_rids2) == 1
+
+
+def test_repeated_separator_files_unique_node_ids():
+    """Files with repeated separators must produce unique node_ids (no
+    separator-collapse surprise)."""
+    pf1 = _pf("a/b.py")
+    pf2 = _pf("a//b.py")
+    r = build([pf1, pf2])
+    file_ids = [n.node_id for n in r.nodes if n.node_type == GraphNodeType.FILE]
+    assert "file:a/b.py" in file_ids
+    assert "file:a//b.py" in file_ids
+    rids = [n.record_id for n in r.nodes]
+    assert len(set(rids)) == len(rids)
+
+
+def test_record_id_no_uuid_or_timestamp_features():
+    """The record ID format must not contain timestamps or timestamp-like
+    suffixes. SHA-256 hex digests are exactly 64 lowercase hex chars."""
+    pf = _pf("mod.py")
+    pf.symbols.append(_sym("foo", SymbolType.FUNCTION))
+    r = build([pf])
+    for n in r.nodes:
+        rec = n.record_id
+        assert "T" not in rec.split(":", 1)[1]  # no ISO timestamp
+        hex_part = rec.split(":", 1)[1]
+        assert all(c in "0123456789abcdef" for c in hex_part)
+
+
+def test_record_id_distinct_under_colon_path_collisions():
+    """Adversarial: two files whose paths share a suffix that would, under
+    naive colon-concatenation, produce identical record IDs. Must remain
+    distinct."""
+    pf1 = _pf("a/b.py")
+    pf1.symbols.append(_sym("foo", SymbolType.FUNCTION, start_line=1))
+    pf2 = _pf("a:b.py")
+    pf2.symbols.append(_sym("foo", SymbolType.FUNCTION, start_line=1))
+    r = build([pf1, pf2])
+    file_recs = [n.record_id for n in r.nodes if n.node_type == GraphNodeType.FILE]
+    assert len(set(file_recs)) == 2
+
+
+def test_canonical_identity_collision_impossible_for_routes():
+    """Adversarial: two ParsedRoute records with identical identity must not
+    produce duplicate record IDs or duplicate node entries."""
+    pf = _pf("routes.py")
+    rid = "route:GET:/users:routes.py:1"
+    pf.routes.append(_route("users", "list_users", route_id=rid, start_line=1))
+    pf.routes.append(_route("users", "list_users", route_id=rid, start_line=1))
+    pf.symbols.append(_sym("list_users", SymbolType.FUNCTION, start_line=2))
+    r = build([pf])
+    route_nodes = [n for n in r.nodes if n.node_type == GraphNodeType.ROUTE]
+    assert len(route_nodes) == 1
+    # Same record_id repeated under different canonical identity objects
+    # is impossible: only one node entry survives, with one record_id.
+    rids = [n.record_id for n in r.nodes]
+    assert len(set(rids)) == len(rids)
+
+
+def test_graph_builder_rejects_duplicate_node_id_in_input():
+    """If input attempts to register the same node_id twice via distinct
+    canonical paths, the graph builder reads only the first canonical
+    occurrence. The result must have no duplicate node_id or record_id."""
+    # Same symbol_id reused across files is a parser problem in practice
+    # but the graph builder makes the result deterministic.
+    pf1 = _pf("a.py")
+    pf1.symbols.append(_sym("dup", SymbolType.FUNCTION, symbol_id="sym:DUP", start_line=1))
+    pf2 = _pf("b.py")
+    pf2.symbols.append(_sym("dup", SymbolType.FUNCTION, symbol_id="sym:DUP", start_line=1))
+    r = build([pf1, pf2])
+    nids = [n.node_id for n in r.nodes]
+    rids = [n.record_id for n in r.nodes]
+    assert len(set(nids)) == len(nids)
+    assert len(set(rids)) == len(rids)

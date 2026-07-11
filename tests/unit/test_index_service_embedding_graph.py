@@ -104,6 +104,17 @@ def _make_default_parsed_files():
     return [ParsedFile(file_id="f1", file_path="mod.py", status=ParseStatus.PARSED)]
 
 
+def _nuuid(name: str) -> str:
+    """Synthetic deterministic record ID for tests of validator-only behavior."""
+    import hashlib
+    return "gn:" + hashlib.sha256(name.encode()).hexdigest()
+
+
+def _euuid(name: str) -> str:
+    import hashlib
+    return "ge:" + hashlib.sha256(name.encode()).hexdigest()
+
+
 def _make_default_service(encoder=None, graph_builder=None, scanner=None,
                           parser=None, chunker=None):
     if scanner is None:
@@ -982,7 +993,8 @@ class TestSuccessfulResult:
         )
         graph_builder = MagicMock()
         graph_builder.build.return_value = GraphBuildResult(
-            nodes=[GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE)],
+            nodes=[GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                                  record_id=_nuuid("n1"))],
             edges=[],
             node_count=1,
             edge_count=0,
@@ -1001,7 +1013,8 @@ class TestSuccessfulResult:
         )
         graph_builder = MagicMock()
         graph_builder.build.return_value = GraphBuildResult(
-            nodes=[GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE)],
+            nodes=[GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                                  record_id=_nuuid("n1"))],
             edges=[],
             node_count=1,
             edge_count=0,
@@ -1028,7 +1041,8 @@ class TestSuccessfulResult:
         )
         graph_builder = MagicMock()
         graph_builder.build.return_value = GraphBuildResult(
-            nodes=[GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE)],
+            nodes=[GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                                  record_id=_nuuid("n1"))],
             edges=[],
             node_count=1,
             edge_count=0,
@@ -1242,17 +1256,21 @@ class TestCorrectedGraphAcceptance:
         )
         graph_builder = MagicMock()
         n1 = GraphNodeInput(node_id="file:mod.py", node_type=GraphNodeType.FILE,
-                            source_file="mod.py")
+                            source_file="mod.py", record_id=_nuuid("file:mod.py"))
         n2 = GraphNodeInput(node_id="import:mod.py:os:os:1", node_type=GraphNodeType.IMPORT,
-                            source_file="mod.py")
+                            source_file="mod.py", record_id=_nuuid("import:mod.py:os:os:1"))
         n3 = GraphNodeInput(node_id="import:mod.py:json:json:2", node_type=GraphNodeType.IMPORT,
-                            source_file="mod.py")
+                            source_file="mod.py", record_id=_nuuid("import:mod.py:json:json:2"))
         graph_builder.build.return_value = GraphBuildResult(
             nodes=[n1, n2, n3], edges=[
                 GraphEdgeInput(source_node_id="file:mod.py", target_node_id="import:mod.py:os:os:1",
-                                relation=GraphRelation.IMPORTS),
+                                relation=GraphRelation.IMPORTS,
+                                source_file="mod.py",
+                                record_id=_euuid("e1")),
                 GraphEdgeInput(source_node_id="file:mod.py", target_node_id="import:mod.py:json:json:2",
-                                relation=GraphRelation.IMPORTS),
+                                relation=GraphRelation.IMPORTS,
+                                source_file="mod.py",
+                                record_id=_euuid("e2")),
             ],
             node_count=3, edge_count=2,
         )
@@ -1268,11 +1286,13 @@ class TestCorrectedGraphAcceptance:
         )
         graph_builder = MagicMock()
         n1 = GraphNodeInput(node_id="file:routes.py", node_type=GraphNodeType.FILE,
-                            source_file="routes.py")
+                            source_file="routes.py", record_id=_nuuid("file:routes.py"))
         n2 = GraphNodeInput(node_id="route:GET:/items:routes.py:1", node_type=GraphNodeType.ROUTE,
-                            source_file="routes.py")
+                            source_file="routes.py",
+                            record_id=_nuuid("route:GET:/items:routes.py:1"))
         n3 = GraphNodeInput(node_id="route:POST:/items:routes.py:2", node_type=GraphNodeType.ROUTE,
-                            source_file="routes.py")
+                            source_file="routes.py",
+                            record_id=_nuuid("route:POST:/items:routes.py:2"))
         graph_builder.build.return_value = GraphBuildResult(
             nodes=[n1, n2, n3], edges=[],
             node_count=3, edge_count=0,
@@ -1289,9 +1309,9 @@ class TestCorrectedGraphAcceptance:
         )
         graph_builder = MagicMock()
         n1 = GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
-                            source_file="mod.py")
+                            source_file="mod.py", record_id=_nuuid("dup1"))
         n2 = GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
-                            source_file="mod.py")
+                            source_file="mod.py", record_id=_nuuid("dup2"))
         graph_builder.build.return_value = GraphBuildResult(
             nodes=[n1, n2], edges=[], node_count=2, edge_count=0,
         )
@@ -1312,3 +1332,180 @@ class TestCorrectedGraphAcceptance:
         assert result.run_result.state == IndexState.ERROR
         assert result.embedding_result is not None
         assert result.graph_result is None
+
+
+# ── §3 closure invariants: graph identity guarantees ─────────────────────────
+
+
+class TestGraphIdentityInvariants:
+    """WP5 Step 3 closure §3: successful results must have unique node IDs,
+    unique node record IDs, unique canonical edges, unique edge record IDs,
+    and every edge endpoint must reference a known node. The validator
+    enforces this on every non-fatal result."""
+
+    def _build_graph_result(self, nodes, edges=None):
+        edges = edges or []
+        return GraphBuildResult(
+            nodes=nodes, edges=edges,
+            node_count=len(nodes), edge_count=len(edges),
+        )
+
+    def _success_result(self, srv):
+        r = srv.build_through_graphing(FCodeConfig(repo_path="."))
+        assert r.run_result.state == IndexState.GRAPHING, (
+            f"unexpected ERROR; diag={[d.message for d in r.run_result.diagnostics]}"
+        )
+        return r
+
+    def _fail_result(self, srv):
+        r = srv.build_through_graphing(FCodeConfig(repo_path="."))
+        assert r.run_result.state == IndexState.ERROR
+        return r
+
+    def test_validator_rejects_empty_node_record_id(self):
+        encoder = MagicMock()
+        encoder.encode.return_value = _make_batch_result(
+            eligible=1, success=1, fail=0, skipped=0,
+            records=[_make_valid_record()],
+        )
+        gb = MagicMock()
+        # node with empty record ID must be rejected
+        gb.build.return_value = self._build_graph_result([
+            GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                            record_id=""),
+        ])
+        svc = _make_default_service(encoder=encoder, graph_builder=gb)
+        r = self._fail_result(svc)
+
+    def test_validator_rejects_duplicate_node_record_id(self):
+        encoder = MagicMock()
+        encoder.encode.return_value = _make_batch_result(
+            eligible=1, success=1, fail=0, skipped=0,
+            records=[_make_valid_record()],
+        )
+        gb = MagicMock()
+        gb.build.return_value = self._build_graph_result([
+            GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                            record_id=_nuuid("dup")),
+            GraphNodeInput(node_id="n2", node_type=GraphNodeType.FILE,
+                            record_id=_nuuid("dup")),
+        ])
+        svc = _make_default_service(encoder=encoder, graph_builder=gb)
+        r = self._fail_result(svc)
+
+    def test_validator_rejects_empty_edge_record_id(self):
+        encoder = MagicMock()
+        encoder.encode.return_value = _make_batch_result(
+            eligible=1, success=1, fail=0, skipped=0,
+            records=[_make_valid_record()],
+        )
+        gb = MagicMock()
+        gb.build.return_value = self._build_graph_result(
+            nodes=[
+                GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                                record_id=_nuuid("n1")),
+                GraphNodeInput(node_id="n2", node_type=GraphNodeType.FUNCTION,
+                                record_id=_nuuid("n2")),
+            ],
+            edges=[
+                GraphEdgeInput(source_node_id="n1", target_node_id="n2",
+                                relation=GraphRelation.DEFINES, record_id=""),
+            ],
+        )
+        svc = _make_default_service(encoder=encoder, graph_builder=gb)
+        r = self._fail_result(svc)
+
+    def test_validator_rejects_duplicate_canonical_edges(self):
+        encoder = MagicMock()
+        encoder.encode.return_value = _make_batch_result(
+            eligible=1, success=1, fail=0, skipped=0,
+            records=[_make_valid_record()],
+        )
+        gb = MagicMock()
+        e1 = GraphEdgeInput(source_node_id="n1", target_node_id="n2",
+                              relation=GraphRelation.DEFINES,
+                              source_file="mod.py", source_location="mod.py:1",
+                              record_id=_euuid("e1"))
+        e2 = GraphEdgeInput(source_node_id="n1", target_node_id="n2",
+                              relation=GraphRelation.DEFINES,
+                              source_file="mod.py", source_location="mod.py:1",
+                              record_id=_euuid("e2"))
+        gb.build.return_value = self._build_graph_result(
+            nodes=[
+                GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                                record_id=_nuuid("n1")),
+                GraphNodeInput(node_id="n2", node_type=GraphNodeType.FUNCTION,
+                                record_id=_nuuid("n2")),
+            ],
+            edges=[e1, e2],
+        )
+        svc = _make_default_service(encoder=encoder, graph_builder=gb)
+        r = self._fail_result(svc)
+
+    def test_validator_rejects_orphan_edge_endpoint(self):
+        encoder = MagicMock()
+        encoder.encode.return_value = _make_batch_result(
+            eligible=1, success=1, fail=0, skipped=0,
+            records=[_make_valid_record()],
+        )
+        gb = MagicMock()
+        gb.build.return_value = self._build_graph_result(
+            nodes=[
+                GraphNodeInput(node_id="n1", node_type=GraphNodeType.FILE,
+                                record_id=_nuuid("n1")),
+            ],
+            edges=[
+                GraphEdgeInput(source_node_id="n1", target_node_id="ghost",
+                                relation=GraphRelation.DEFINES,
+                                record_id=_euuid("e1")),
+            ],
+        )
+        svc = _make_default_service(encoder=encoder, graph_builder=gb)
+        r = self._fail_result(svc)
+
+    def test_validator_accepts_well_formed_graph(self):
+        encoder = MagicMock()
+        encoder.encode.return_value = _make_batch_result(
+            eligible=1, success=1, fail=0, skipped=0,
+            records=[_make_valid_record()],
+        )
+        gb = MagicMock()
+        gb.build.return_value = self._build_graph_result(
+            nodes=[
+                GraphNodeInput(node_id="file:mod.py",
+                                node_type=GraphNodeType.FILE,
+                                source_file="mod.py",
+                                record_id=_nuuid("file:mod.py")),
+                GraphNodeInput(node_id="function:mod.py:foo:1",
+                                node_type=GraphNodeType.FUNCTION,
+                                source_file="mod.py",
+                                record_id=_nuuid("function:mod.py:foo:1")),
+            ],
+            edges=[
+                GraphEdgeInput(source_node_id="file:mod.py",
+                                target_node_id="function:mod.py:foo:1",
+                                relation=GraphRelation.DEFINES,
+                                source_file="mod.py",
+                                source_location="mod.py:1",
+                                record_id=_euuid("e1")),
+            ],
+        )
+        svc = _make_default_service(encoder=encoder, graph_builder=gb)
+        r = self._success_result(svc)
+        # invariants: every node_id, node_record_id, edge_record_id, edge
+        # canonical tuple is unique in the result graph.
+        g = r.graph_result
+        nids = [n.node_id for n in g.nodes]
+        nrids = [n.record_id for n in g.nodes]
+        erids = [e.record_id for e in g.edges]
+        canon = [(e.source_node_id, e.target_node_id, e.relation.value,
+                  e.source_file or "", e.source_location or "")
+                 for e in g.edges]
+        assert len(set(nids)) == len(nids)
+        assert len(set(nrids)) == len(nrids)
+        assert len(set(erids)) == len(erids)
+        assert len(set(canon)) == len(canon)
+        node_id_set = set(nids)
+        for e in g.edges:
+            assert e.source_node_id in node_id_set
+            assert e.target_node_id in node_id_set
