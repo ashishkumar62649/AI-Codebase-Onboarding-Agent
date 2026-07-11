@@ -35,6 +35,8 @@ No network calls during operation. No cloud services. No external APIs.
 | `fcode doctor` | Diagnostics | Check dependencies and health | Functional |
 | `fcode setup <agent> --repo <repo_path>` | Setup | Configure agent integration | Stub (exit 2) |
 
+**Chunking data flow:** The chunker is the only component that creates `CodeChunk` values. It receives sanitized text from `ScannedFile.safe_content` and Python structure from `ParsedFile`. It never reopens original repository files. Python chunks use `ParsedFile` symbols, imports, and routes for structure. Markdown/RST, config, and generic-text chunks use only `ScannedFile.safe_content`. The scanner is the only component that reads original repository files.
+
 **First-slice stub behavior:** `dashboard`, `mcp`, and `setup` commands accept their documented arguments, perform no subprocess launch, perform no network operation, perform no file modification, print `"This command is not available in the first implementation slice."`, and exit with code `2`. Their CLI help text identifies them as deferred.
 
 ## 4. CLI Architecture
@@ -315,9 +317,9 @@ Return: ranked evidence with file paths, symbols, line ranges
 | `fcode/cli/` | CLI entry point, argument parsing | contracts + All services |
 | `fcode/config/` | Configuration management | None |
 | `fcode/indexing/` | Pipeline orchestration (Phase A, B, C) | All index services |
-| `fcode/scanner/` | File discovery, ignore rules | None |
+| `fcode/scanner/` | File discovery, ignore rules, secret detection | None |
 | `fcode/parser/` | Python AST extraction | None |
-| `fcode/chunking/` | Semantic chunk creation | parser output |
+| `fcode/chunking/` | Semantic chunk creation from safe scanner content and parser structure | scanner + parser output |
 | `fcode/embeddings/` | Sentence Transformers encoding | None |
 | `fcode/storage/` | SQLite + Chroma operations | None |
 | `fcode/retrieval/` | Hybrid search + ranking | storage, embeddings |

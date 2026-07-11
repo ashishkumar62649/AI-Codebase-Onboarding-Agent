@@ -38,11 +38,16 @@ class GraphBuilderProtocol(Protocol):
 
 
 class ChunkerProtocol(Protocol):
-    def chunk(self, parsed_files: list[ParsedFile]) -> list[CodeChunk]: ...
+    def chunk(
+        self,
+        scanned_files: Sequence[ScannedFile],
+        parsed_files: Sequence[ParsedFile],
+    ) -> list[CodeChunk]: ...
 
 
 class EmbeddingEncoderProtocol(Protocol):
-    def encode(self, inputs: list[EmbeddingInput]) -> list[EmbeddingRecord]: ...
+    def ensure_available(self) -> None: ...
+    def encode(self, inputs: Sequence[EmbeddingInput]) -> EmbeddingBatchResult: ...
 
 
 class SQLiteStoreProtocol(Protocol):

@@ -1,5 +1,7 @@
 """Contract tests — verify WP0 shared contracts match documented behavior."""
 
+import pytest
+
 from fcode.contracts import (
     ChunkType,
     Confidence,
@@ -136,3 +138,46 @@ class TestModels:
         from fcode.contracts import ScannedFile, FileType
         f = ScannedFile(file_path="test.py", file_type=FileType.SOURCE, size_bytes=100)
         assert not f.is_binary
+
+    def test_code_chunk_canonical_fields(self):
+        from fcode.contracts import CodeChunk, ChunkType
+        c = CodeChunk(
+            chunk_id="id-1",
+            file_id="file-1",
+            chunk_type=ChunkType.FUNCTION,
+            content="def foo(): pass",
+            start_line=1,
+            end_line=3,
+            file_path="mod.py",
+            language="Python",
+            symbol_id="sym-1",
+            symbol_name="foo",
+            content_hash="abc",
+            metadata={"has_secrets": False, "parse_status": "parsed"},
+        )
+        assert c.chunk_id == "id-1"
+        assert c.file_id == "file-1"
+        assert c.chunk_type == ChunkType.FUNCTION
+        assert c.content == "def foo(): pass"
+        assert c.start_line == 1
+        assert c.end_line == 3
+        assert c.language == "Python"
+        assert c.file_path == "mod.py"
+        assert c.symbol_id == "sym-1"
+        assert c.symbol_name == "foo"
+        assert c.content_hash == "abc"
+        assert c.metadata["has_secrets"] is False
+
+    def test_code_chunk_no_stale_fields(self):
+        from fcode.contracts import CodeChunk
+        assert not hasattr(CodeChunk, "text")
+        assert not hasattr(CodeChunk, "source_file")
+        assert not hasattr(CodeChunk, "embedding")
+
+    def test_code_chunk_file_path_required(self):
+        from fcode.contracts import CodeChunk, ChunkType
+        with pytest.raises(TypeError, match="required positional argument|missing.*required.*argument"):
+            CodeChunk(
+                chunk_id="x", file_id="y", chunk_type=ChunkType.FILE_SUMMARY,
+                content="z", start_line=1, end_line=1,
+            )

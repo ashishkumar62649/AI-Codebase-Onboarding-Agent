@@ -416,6 +416,14 @@ Variable definitions are stored in `symbols` with `symbol_type = "variable"`. Du
 
 ## 11. Chunking Strategy
 
+### Input Validation
+
+Before any chunking, the chunker validates:
+- Each `ScannedFile.file_id` is unique in the input
+- Each `ParsedFile.file_id` is unique in the input
+- Every parsed file has a matching scanned file
+- Every Python file in scanned files has a matching parsed file (may be error status)
+
 ### Python
 
 Files ending in `.py` or `.pyw` may produce the following chunk types:
@@ -429,9 +437,21 @@ Files ending in `.py` or `.pyw` may produce the following chunk types:
 | route | Route handler function | 1 chunk per route |
 | test | Test function or class | 1 chunk per test |
 
+**Chunk content:**
+- For functions/methods: the full function body (including leading docstring and decorators).
+- For classes: class signature line + docstring + method signatures (not full bodies). If no docstring, class body's first 20 lines or up to first method.
+- For file summaries: file docstring + first 20 lines of content. If parser produced an error, first 20 lines of raw content.
+- For routes: route decorator + handler function body.
+- For tests: test function body.
+- For files with `parse_status = 'error'`: no symbol chunks are produced; a single `file_summary` chunk is created from the first 20 lines of raw content.
+
+**Symbol order within file:** Functions and methods are ordered by `(start_line, end_line)`.
+
 ### Documentation
 
-Files ending in `.md` or `.rst` produce `readme_section` chunks split by headings. They do not produce `file_summary` chunks.
+Files ending in `.md` produce `readme_section` chunks split by Markdown headings (`# `, `## `, `### `, etc.). Files ending in `.rst` produce `readme_section` chunks split by RST section headings (underlined with `=`, `-`, `~`, etc.). They do not produce `file_summary` chunks.
+
+Content before the first heading is treated as a single preamble section chunk.
 
 ### Configuration
 
@@ -450,9 +470,13 @@ Other eligible text files:
 - Produce no chunks in the first slice
 - Produce no vectors
 
+### Chunk content source
+
+The chunker uses `ScannedFile.safe_content` (already redacted by the scanner) as the content source, not the raw file content. If `safe_content` is empty, the chunker falls back to the raw file path.
+
 ### Chunk metadata
 
-- repo_id
+- repo_id (set by index_service at storage time)
 - file_id
 - symbol_id (if applicable)
 - chunk_type
@@ -461,18 +485,8 @@ Other eligible text files:
 - content_hash
 - language
 - symbol_name
-- file_path (repo-relative, POSIX separators, copied from files.path at chunk creation)
-- metadata (JSON)
-
-### Chunk content
-
-- For functions/methods: the full function body
-- For classes: class docstring + method signatures (not full bodies)
-- For file summaries: file docstring + imports + first 20 lines
-- For routes: route decorator + handler function body
-- For tests: test function body
-- For config: full file content (if < 100 lines), otherwise 100-line blocks
-- For readme sections: section text
+- file_path (repo-relative, POSIX separators, copied from scanned file at chunk creation)
+- metadata (JSON), includes `has_secrets` and `parse_status`
 
 **Source:** `fcode/chunking/chunker.py`
 
