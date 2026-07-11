@@ -291,7 +291,7 @@ Return: ranked evidence with file paths, symbols, line ranges
 
 `fcode/indexing/` contains:
 - `state_machine.py` — a pure state controller that performs no I/O, imports no feature modules, and knows nothing about the repository path. It tracks indexing state, active phase, completed phase, history, and the Phase-C persistent-replacement flag.
-- `index_service.py` — the pipeline orchestrator (belongs to later WP5 steps; not yet implemented).
+- `index_service.py` — the pipeline orchestrator (Step 2: scan→parse→chunk in memory, no storage/embeddings/graph).
 
 `fcode/indexing/index_service.py` is owned by the Integration Agent. It is the only module that controls:
 - Phase order
@@ -391,7 +391,7 @@ fcode/
 ├── indexing/
 │   ├── __init__.py
 │   ├── state_machine.py    # pure state controller (no I/O)
-│   └── index_service.py    # pipeline orchestrator (Phase A, B, C) — later WP5 steps
+│   └── index_service.py    # pipeline orchestrator (Step 2: scan→parse→chunk in memory)
 ├── graph/
 │   ├── __init__.py
 │   ├── graph_builder.py    # extract nodes/edges from AST

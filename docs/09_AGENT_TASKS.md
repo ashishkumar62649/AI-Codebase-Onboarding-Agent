@@ -470,7 +470,7 @@ See WP5 Step 2 report for full details.
 **Expected Outputs:**
 - `fcode/indexing/__init__.py`
 - `fcode/indexing/state_machine.py` — pure state controller (no I/O)
-- `fcode/indexing/index_service.py` — pipeline orchestrator (later WP5 steps)
+- `fcode/indexing/index_service.py` — pipeline orchestrator (Step 2: scan→parse→chunk in memory)
 
 **`state_machine.py` contract:**
 - `IndexStateMachine` — deterministic state machine with legal forward transitions and ERROR from every non-terminal state
@@ -499,6 +499,10 @@ See WP5 Step 2 report for full details.
 - `IndexCounts` — appended parse_errors, symbols, embedding_eligible, embedding_skipped, embedding_failed, warnings, errors; added `validate()`
 - `IndexDiagnostic` — added code, recoverable, repo_relative_path, details fields; phase made optional; added `validate()`
 - `IndexRunResult` — state defaults to PENDING; phase defaults to None; added diagnostics list; added `validate()`
+
+**WP5 Step 2 contract changes:**
+- `IndexBuildResult` — new dataclass with fields: run_result, completed_phase, state_history, persistent_replacement_started, scan_result, parsed_files, chunks, embedding_result, graph_result
+- `fcode/indexing/index_service.py` — new module; `IndexService` class with `build_through_chunking()` only (no `run_index`, `get_status`, `get_counts`)
 
 **Documentation Updates:**
 - Update any doc if contracts changed during integration
