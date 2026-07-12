@@ -29,12 +29,12 @@ G01_REVIEW_OUTPUT=tests/fixtures/wp6/reviews/g01_python_service_source_inventory
 
 | Relative path | File type | Logical lines | Expected scanned | Expected parsed status | Purpose |
 |---|---|---:|---|---|---|
-| guide.rst | RST doc | 7 | YES | error | RST documentation file |
-| README.md | Markdown doc | 5 | YES | error | Project README |
+| guide.rst | RST doc | 7 | YES | not_applicable | RST documentation file |
+| README.md | Markdown doc | 5 | YES | not_applicable | Project README |
 | service/__init__.py | Python package marker | 1 | YES | parsed | Package init, docstring only |
 | service/helpers.py | Python source | 9 | YES | parsed | Helper functions |
 | service/routes.py | Python source | 23 | YES | parsed | FastAPI route definitions |
-| settings.toml | TOML config | 2 | YES | error | Service configuration |
+| settings.toml | TOML config | 2 | YES | not_applicable | Service configuration |
 | tests/TestRoutes.py | Python test | 5 | YES | parsed | Route test |
 
 All 7 files are scanned (eligible, non-ignored, readable, not binary, not .env, within size limits). No files are excluded.
@@ -47,17 +47,17 @@ Line endings: all files use LF (Unix-style), no CRLF.
 
 | Path | Expected status | Language | Diagnostic category | Manual reason |
 |---|---|---|---|---|
-| guide.rst | error | NONE | NONE | Content `Golden Guide / =============` then `Configuration / -----` then `The golden service is static.` — when parsed as Python via `ast.parse()`, line 7 `The golden service is static.` produces SyntaxError. Not valid Python syntax. |
-| README.md | error | NONE | NONE | Content includes `# Golden Service` (valid Python comment), `## Search Terms` (valid Python comment), but line 5 `Golden profile service provides deterministic greeting behavior.` is not valid Python syntax → SyntaxError. |
+| guide.rst | not_applicable | NONE | NONE | Extension `.rst` → scanner sets `parse_status = NOT_APPLICABLE` (file_scanner.py L194). Index service parse-phase filter (L307-309) selects only `PENDING` files → guide.rst is never sent to `ast.parse()`. Final status remains `not_applicable`. |
+| README.md | not_applicable | NONE | NONE | Extension `.md` → scanner sets `parse_status = NOT_APPLICABLE`. Never enters parse phase. Final status remains `not_applicable`. |
 | service/__init__.py | parsed | Python | NONE | Single line `"""Golden service package."""` — valid Python module docstring, parses successfully. |
 | service/helpers.py | parsed | Python | NONE | Valid Python: variable assignment, two functions (one sync, one async). No syntax errors. |
 | service/routes.py | parsed | Python | NONE | Valid Python: imports, variable, class with methods, two route-decorated functions. No syntax errors. |
-| settings.toml | error | NONE | NONE | Content `[service] / name = "golden-profile-service"` — line 1 `[service]` is not valid Python syntax → SyntaxError. |
+| settings.toml | not_applicable | NONE | NONE | Extension `.toml` → scanner sets `parse_status = NOT_APPLICABLE`. Never enters parse phase. Final status remains `not_applicable`. |
 | tests/TestRoutes.py | parsed | Python | NONE | Valid Python: variable assignment `__test__ = False`, one test function with assert statement. No syntax errors. |
 
-Parse status summary: 4 files parsed, 3 files with parse errors (all non-Python files that fail `ast.parse()`).
+Parse status summary: 4 files parsed (all `.py` files), 3 files not_applicable (all non-Python files). 0 files with parse errors.
 
-The existing manifest's `parse_status` field maps `guide.rst`, `README.md`, and `settings.toml` are NOT listed in the `parse_status` dict (only Python files are), but the scanner sets `parse_status = 'pending'` for Python and `parse_status = 'not_applicable'` for non-Python. After parsing, non-Python files go through `ast.parse()` which raises SyntaxError → status becomes `error`. This is a pipeline behavior distinction.
+The scanner (file_scanner.py L179-194) sets `parse_status = PENDING` for `.py` files and `parse_status = NOT_APPLICABLE` for all others. The index service parse phase (index_service.py L307-309) filters candidates to `parse_status == PENDING and not is_binary`, so only Python files enter the parser. Non-Python files retain `not_applicable` throughout the pipeline — they are never sent to `ast.parse()`.
 
 ---
 
@@ -100,7 +100,7 @@ The existing manifest's `parse_status` field maps `guide.rst`, `README.md`, and 
 
 **service/__init__.py:** No symbols (only docstring, no Assign/FunctionDef/ClassDef).
 
-**guide.rst, README.md, settings.toml:** parse_status=error → no symbols extracted.
+**guide.rst, README.md, settings.toml:** parse_status=not_applicable → no symbols extracted (never sent to parser).
 
 ### 4.2 Symbol Summary
 
@@ -162,7 +162,7 @@ The file `tests/TestRoutes.py` has `__test__ = False` at line 1 (a variable assi
 | file_summary:service/routes.py:1-20 | service/routes.py | file_summary | NONE | 1 | 20 | YES | NONE | 23 lines. `_make_file_summary()` takes min(20, 23)=20 lines. Includes 2 import texts (from fastapi, from helpers). start_line=1, end_line=20. |
 | file_summary:tests/TestRoutes.py:1-5 | tests/TestRoutes.py | file_summary | NONE | 1 | 5 | YES | NONE | 5 lines ≤ 20. No docstring, no imports. Content is first 5 lines. start_line=1, end_line=5. |
 
-Note: `guide.rst`, `README.md`, and `settings.toml` have parse_status=error. Per chunker rules: "Files with `parse_status = 'error'`: no symbol chunks; a single `file_summary` chunk from first 20 lines of raw content." However, these are non-Python files routed through `_chunk_markdown`, `_chunk_rst`, or `_chunk_config` based on extension, NOT `_chunk_python`. The `_chunk_python` method only handles `.py`/`.pyw` extensions. These files get their own chunking paths and do NOT produce file_summary chunks — they produce heading/section/config chunks instead.
+Note: `guide.rst`, `README.md`, and `settings.toml` have parse_status=not_applicable. These are non-Python files routed through `_chunk_markdown`, `_chunk_rst`, or `_chunk_config` based on extension, NOT `_chunk_python`. The `_chunk_python` method only handles `.py`/`.pyw` extensions. These files get their own chunking paths and do NOT produce file_summary chunks — they produce heading/section/config chunks instead.
 
 ### 8.2 Python Function Chunks
 
@@ -266,12 +266,12 @@ Note: RST content includes the underline marker line as part of the section chun
 
 | Node semantic key | Kind | Qualified name | Source path | Linked semantic key | Manual justification |
 |---|---|---|---|---|---|
-| file:guide.rst | file | guide.rst | guide.rst | NONE | Every scanned file produces a file node. guide.rst is scanned and parsed (error status). |
-| file:README.md | file | README.md | README.md | NONE | Every scanned file produces a file node. README.md is scanned and parsed (error status). |
+| file:guide.rst | file | guide.rst | guide.rst | NONE | Every scanned file produces a file node. guide.rst is scanned (parse status not_applicable). |
+| file:README.md | file | README.md | README.md | NONE | Every scanned file produces a file node. README.md is scanned (parse status not_applicable). |
 | file:service/__init__.py | file | service/__init__.py | service/__init__.py | NONE | Every scanned file produces a file node. service/__init__.py is scanned and parsed (parsed status). |
 | file:service/helpers.py | file | service/helpers.py | service/helpers.py | NONE | Every scanned file produces a file node. |
 | file:service/routes.py | file | service/routes.py | service/routes.py | NONE | Every scanned file produces a file node. |
-| file:settings.toml | file | settings.toml | settings.toml | NONE | Every scanned file produces a file node. settings.toml is scanned and parsed (error status). |
+| file:settings.toml | file | settings.toml | settings.toml | NONE | Every scanned file produces a file node. settings.toml is scanned (parse status not_applicable). |
 | file:tests/TestRoutes.py | file | tests/TestRoutes.py | tests/TestRoutes.py | NONE | Every scanned file produces a file node. |
 
 ### 10.2 Route Nodes (2)
@@ -432,12 +432,12 @@ Note: The graph builder creates cross-file `calls` edges. The `05_INDEXING_AND_R
 
 | Category | Expected count | Source cause | Relevant path |
 |---|---:|---|---|
-| parse_warning | 3 | Non-Python files (README.md, guide.rst, settings.toml) fail `ast.parse()` with SyntaxError | README.md, guide.rst, settings.toml |
+| parse_warning | 0 | No files produce parse warnings. Non-Python files are never sent to `ast.parse()` (scanner assigns `not_applicable`). All 4 Python files parse successfully. | NONE |
 
-EXPECTED_WARNINGS=3
+EXPECTED_WARNINGS=0
 EXPECTED_RECOVERABLE_ERRORS=0
 
-All 3 warnings are `parse_warning` category. The scanner sets `parse_status='pending'` for non-Python files, the parser attempts `ast.parse()`, gets SyntaxError, sets `parse_status='error'`, and increments `warning_count`. These are recoverable warnings, not fatal errors — indexing continues.
+The scanner sets `parse_status=NOT_APPLICABLE` for non-Python files (file_scanner.py L194). The index service parse phase (index_service.py L307-309) only selects files with `parse_status == PENDING`. Non-Python files never enter the parser. The `parse_warning` diagnostic (index_service.py L351-358) is emitted only when a parsed file returns `ParseStatus.ERROR`; since all 4 Python files parse successfully, no `parse_warning` diagnostics are produced.
 
 No secret detection warnings (`file_secret_detected=0`), no file skipped warnings (`file_skipped=0`), no embedding chunk warnings (`embedding_chunk_warning=0`).
 
@@ -485,7 +485,7 @@ Digests match the existing manifest integrity exactly.
 |---|---|---|
 | scanned_files | YES | NONE — all 7 files accounted for |
 | excluded_files | NOT_APPLICABLE | NONE — no files excluded from this fixture |
-| parse_statuses | YES | NONE — 4 parsed, 3 error (all non-Python files) |
+| parse_statuses | YES | NONE — 4 parsed, 3 not_applicable (all non-Python files) |
 | symbols | YES | NONE — 11 symbols identified (9 non-route + 2 route) |
 | imports | YES | NONE — 4 import records from 2 import statements |
 | routes | YES | NONE — 2 routes (GET, POST) accounted for |
@@ -494,7 +494,7 @@ Digests match the existing manifest integrity exactly.
 | graph_nodes | YES | DIVERGENCE: source-derived=22, manifest=18. See §10.5 |
 | graph_edges | YES | DIVERGENCE: source-derived=21, manifest=19. See §11.7 |
 | safe_search_terms | YES | NONE — 17 terms listed |
-| warnings | YES | NONE — 3 parse_warnings expected |
+| warnings | YES | NONE — 0 parse_warnings expected |
 | errors | YES | NONE — 0 recoverable errors expected |
 | deterministic_invariants | YES | NONE |
 
@@ -506,7 +506,7 @@ Digests match the existing manifest integrity exactly.
 |---|---|---|---|
 | graph_nodes | 18 | 22 | 4 extra file nodes for error-status files (guide.rst, README.md, settings.toml, settings.toml) + 1 extra import node. Current code creates file nodes for ALL parsed files regardless of parse_status. |
 | graph_edges | 19 | 21 | 2 extra handler→route `defines` edges. The graph_builder emits `handler → route` edges with relation=DEFINES, which the manifest likely did not count. |
-| parse_status | only 4 Python files listed | 3 non-Python files also have parse_status=error | The manifest `parse_status` dict only lists Python files. Non-Python files are also parsed (via ast.parse) and get error status, but the manifest omits them. |
+| parse_status | only 4 Python files listed | 3 non-Python files have parse_status=not_applicable | The scanner assigns `not_applicable` to non-Python files. They never enter the parse phase. The manifest correctly omits them from the `parse_status` dict because their status is `not_applicable`, not a parse outcome. |
 
 These divergences are documented here as review evidence. The source-derived oracle is authoritative; the manifest is a snapshot from a prior pipeline run.
 
