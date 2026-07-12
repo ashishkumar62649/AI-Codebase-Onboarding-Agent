@@ -1,12 +1,14 @@
-"""WP1 diagnostic checks for the doctor command."""
+"""Offline readiness checks for the functional indexing command."""
 
+import importlib
+import sqlite3
 import sys
 from pathlib import Path
 
 from fcode.contracts import DiagnosticSeverity, DoctorCheck
 from fcode.contracts import DoctorResult
 
-_WP1_IMPORTS = ["typer", "pydantic"]
+_REQUIRED_IMPORTS = ("sentence_transformers", "chromadb")
 
 
 def check_python_version() -> DoctorCheck:
@@ -22,9 +24,9 @@ def check_python_version() -> DoctorCheck:
 
 def check_required_imports() -> DoctorCheck:
     missing = []
-    for mod in _WP1_IMPORTS:
+    for mod in _REQUIRED_IMPORTS:
         try:
-            __import__(mod)
+            importlib.import_module(mod)
         except ImportError:
             missing.append(mod)
     if missing:
@@ -37,8 +39,41 @@ def check_required_imports() -> DoctorCheck:
     return DoctorCheck(
         name="required_imports",
         passed=True,
-        message=f"all available ({', '.join(_WP1_IMPORTS)})",
-        severity=DiagnosticSeverity.WARNING,
+            message=f"all available ({', '.join(_REQUIRED_IMPORTS)})",
+            severity=DiagnosticSeverity.WARNING,
+        )
+
+
+def check_sqlite_fts5() -> DoctorCheck:
+    try:
+        conn = sqlite3.connect(":memory:")
+        try:
+            conn.execute("CREATE VIRTUAL TABLE doctor_fts USING fts5(content)")
+            conn.execute("DROP TABLE doctor_fts")
+        finally:
+            conn.close()
+    except sqlite3.DatabaseError:
+        return DoctorCheck("sqlite_fts5", False, "SQLite FTS5 is unavailable", DiagnosticSeverity.ERROR)
+    return DoctorCheck("sqlite_fts5", True, "SQLite FTS5 is available", DiagnosticSeverity.WARNING)
+
+
+def check_local_embedding_model() -> DoctorCheck:
+    try:
+        from fcode.embeddings import EmbeddingEncoder
+
+        EmbeddingEncoder().ensure_available()
+    except Exception:
+        return DoctorCheck(
+            "local_embedding_model",
+            False,
+            "Local embedding model is unavailable (download it before indexing).",
+            DiagnosticSeverity.ERROR,
+        )
+    return DoctorCheck(
+        "local_embedding_model",
+        True,
+        "Local embedding model is available (CPU, local-only).",
+        DiagnosticSeverity.WARNING,
     )
 
 
@@ -113,6 +148,8 @@ def run_doctor(repo_path: str = ".") -> DoctorResult:
     checks = [
         check_python_version(),
         check_required_imports(),
+        check_sqlite_fts5(),
+        check_local_embedding_model(),
         check_directory(repo_path),
         check_write_permission(repo_path),
         check_config_parsing(repo_path),

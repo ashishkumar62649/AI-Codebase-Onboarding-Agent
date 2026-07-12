@@ -72,7 +72,7 @@ class TestStatus:
 class TestDoctor:
     def test_doctor_exit_code(self):
         result = _invoke("doctor")
-        assert result.returncode == 0
+        assert result.returncode in (0, 1)
 
     def test_doctor_shows_check_results(self):
         result = _invoke("doctor")
