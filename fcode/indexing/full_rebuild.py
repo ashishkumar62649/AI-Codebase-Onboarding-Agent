@@ -121,6 +121,8 @@ class FullRebuildCoordinator:
             cleanup_warning = False
             try:
                 marker.unlink()
+                if self._staging.exists() and not any(self._staging.iterdir()):
+                    self._staging.rmdir()
             except OSError:
                 cleanup_warning = True
             if previous is not None:

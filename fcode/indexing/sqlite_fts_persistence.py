@@ -386,4 +386,3 @@ def setup_status_after_step4(
         embedding_model=embedding_model,
         active_search_mode=active_search_mode,
     )
-
