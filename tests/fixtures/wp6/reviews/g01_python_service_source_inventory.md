@@ -153,6 +153,20 @@ The file `tests/TestRoutes.py` has `__test__ = False` at line 1 (a variable assi
 
 ## 8. Chunk-Source Inventory
 
+### 8.0 File-Level Chunk Rules
+
+| Path | Language/type | File-summary chunk | Symbol chunks | Heading/section chunks | Config chunks | Unsupported |
+|---|---|---|---|---|---|---|
+| guide.rst | RST document | NO | NO | 2 RST sections | NO | NO |
+| README.md | Markdown document | NO | NO | 2 Markdown sections | NO | NO |
+| service/__init__.py | Python package-marker | YES | NO | NO | NO | NO |
+| service/helpers.py | Python source | YES | 2 function chunks | NO | NO | NO |
+| service/routes.py | Python source | YES | 2 function, 1 class, 2 method, 2 route chunks | NO | NO | NO |
+| settings.toml | recognized configuration | NO | NO | NO | 1 config block | NO |
+| tests/TestRoutes.py | Python test source | YES | 1 test chunk | NO | NO | NO |
+
+Python files receive file summaries when non-empty; the package-marker file receives one because its docstring is content. Markdown and RST use only heading/section chunks, and configuration uses only config blocks. No unsupported generic-text file exists in G01. Route chunks are separate from handler function chunks; the test chunk is separate from its function representation; class and method chunks are separate.
+
 ### 8.1 Python File Summaries
 
 | Chunk semantic key | Path | Type | Owner | Start | End | Embedding eligible | Skip reason | Manual justification |
@@ -215,19 +229,20 @@ Skipped variables: `DEFAULT_GREETING` (helpers.py L1), `app` (routes.py L5), `__
 
 | Heading text | Heading level | Path | Start | End | Expected chunk identity |
 |---|---:|---|---:|---:|---|
-| Golden Service | 1 | README.md | 1 | 2 | readme_section: README.md:1-2. Content: `# Golden Service` only (section is heading line + blank line before next heading at L3). |
-| Search Terms | 2 | README.md | 3 | 5 | readme_section: README.md:3-5. Content: `## Search Terms\n\nGolden profile service provides deterministic greeting behavior.` |
+| Golden Service | 1 | README.md | 1 | 2 | readme_section:README.md:1-2. Content: `# Golden Service` plus the separating blank line. |
+| Search Terms | 2 | README.md | 3 | 6 | readme_section:README.md:3-6. Content: `## Search Terms\n\nGolden profile service provides deterministic greeting behavior.` plus the trailing split line. |
 
-Markdown heading detection: `_chunk_markdown` uses regex `r"^(#{1,6})\s"`. Line 1 `# Golden Service` matches level 1. Line 3 `## Search Terms` matches level 2. No preamble (first heading at line 1). No trailing section (file ends at line 5).
+Markdown heading detection: `_chunk_markdown` uses regex `r"^(#{1,6})\s"`. Line 1 `# Golden Service` matches level 1. Line 3 `## Search Terms` matches level 2. No preamble (first heading at line 1). The implementation retains the trailing split line, so the second chunk ends at line 6.
 
 #### RST
 
 | Section text | Underline style | Path | Start | End | Expected chunk identity |
 |---|---|---|---:|---:|---|
-| Golden Guide | = | guide.rst | 2 | 4 | readme_section: guide.rst:2-4. Content: `============\n\nConfiguration` (underline L2 through pre-section content L4). |
-| Configuration | - | guide.rst | 5 | 8 | readme_section: guide.rst:5-8. Content: `Configuration\n-------------\n\nThe golden service is static.` (L5 through end L8). |
+| Golden Guide | = | guide.rst | 1 | 3 | readme_section:guide.rst:1-3. Content: `Golden Guide\n============\n` (title and underline, then separator). |
+| Configuration | - | guide.rst | 4 | 8 | readme_section:guide.rst:4-8. Content: `Configuration\n-------------\n\nThe golden service is static.` plus the trailing split line. |
 
-RST heading detection: `_RST_HEADING_PATTERN = re.compile(r"^([=\-~^`:'\"\._*+#<>!@$%&]){3,}\s*$", re.MULTILINE)`. The `============` at L2 matches (= repeated ≥3 times). The `-------------` at L5 matches (- repeated ≥3 times). Headings detected at i=0 (L1→underline L2) and i=3 (L4→underline L5). `heading_spans = [(2, 2, "Golden Guide", "="), (5, 5, "Configuration", "-")]`.
+RST heading detection: `_RST_HEADING_PATTERN = re.compile(r"^([=\-~^`:'\"\._*+#<>!@$%&]){3,}\s*$", re.MULTILINE)`. The `============` at L2 matches (= repeated ≥3 times). The `-------------` at L5 matches (- repeated ≥3 times). Headings detected at i=0 (L1→underline L2) and i=3 (L4→underline L5). The resulting section ranges are `1-3` and `4-8`; the implementation retains the trailing split line.
+RST_SECTION_CHUNK_COUNT=2
 
 Note: RST content includes the underline marker line as part of the section chunk content. This is per the chunker implementation: `section_start = hdr_line - 1` captures the text line, and section_lines include the underline.
 
@@ -235,7 +250,7 @@ Note: RST content includes the underline marker line as part of the section chun
 
 | Block or semantic section | Path | Start | End | Expected chunk identity |
 |---|---|---:|---:|---|
-| [service] section | settings.toml | 1 | 2 | config: settings.toml:1-2. Content: `[service]\nname = "golden-profile-service"`. Config file, 2 lines ≤ 100 → single chunk. `block_index=0`, `block_count=1`. |
+| [service] section | settings.toml | 1 | 3 | config:settings.toml:1-3. Content: `[service]\nname = "golden-profile-service"` plus the trailing split line. Config file, one short block under the 100-line block size. `block_index=0`, `block_count=1`. |
 
 ---
 
@@ -257,6 +272,27 @@ Note: RST content includes the underline marker line as part of the section chun
 | guide.rst readme_section | 2 |
 | settings.toml config | 1 |
 | **Total** | **19** |
+
+FILE_SUMMARY_CHUNKS=4
+FUNCTION_CHUNKS=4
+CLASS_CHUNKS=1
+METHOD_CHUNKS=2
+ROUTE_CHUNKS=2
+TEST_CHUNKS=1
+MARKDOWN_CHUNKS=2
+RST_CHUNKS=2
+CONFIG_CHUNKS=1
+OTHER_CHUNKS=0
+TOTAL_CHUNKS=19
+EMBEDDING_ELIGIBLE_CHUNKS=19
+EMBEDDING_INELIGIBLE_CHUNKS=0
+DUPLICATE_CHUNK_SEMANTIC_KEYS=0
+INVALID_LINE_RANGES=0
+MISSING_SOURCE_CONSTRUCTS=0
+UNJUSTIFIED_CHUNKS=0
+CHUNK_ORACLE_AMBIGUITIES=NONE
+
+The complete arithmetic is 4 + 4 + 1 + 2 + 2 + 1 + 2 + 2 + 1 + 0 = 19. The two RST section chunks are included in the total; no generic-text chunks are present.
 
 ---
 
@@ -450,11 +486,11 @@ The prior 19-edge manifest value omitted the two handler-to-route `defines` edge
 | create_profile | route:POST:/profiles:routes.py:21 | service/routes.py | Route handler function, unique name. |
 | test_greeting_service | test:tests:test_greeting_service | tests/TestRoutes.py | Test function, unique name. |
 | Golden Service | file_summary:README.md:1-2 | README.md | Markdown heading chunk. |
-| Search Terms | readme_section:README.md:3-5 | README.md | Markdown heading chunk. |
-| Golden Guide | readme_section:guide.rst:2-4 | guide.rst | RST section chunk. |
-| Configuration | readme_section:guide.rst:5-8 | guide.rst | RST section chunk, also config section. |
-| service | config:settings.toml:1-2 | settings.toml | TOML section header. |
-| golden-profile-service | config:settings.toml:1-2 | settings.toml | TOML value, unique string. |
+| Search Terms | readme_section:README.md:3-6 | README.md | Markdown heading chunk. |
+| Golden Guide | readme_section:guide.rst:1-3 | guide.rst | RST section chunk. |
+| Configuration | readme_section:guide.rst:4-8 | guide.rst | RST section chunk, also config section. |
+| service | config:settings.toml:1-3 | settings.toml | TOML section header. |
+| golden-profile-service | config:settings.toml:1-3 | settings.toml | TOML value, unique string. |
 | DEFAULT_GREETING | variable:helpers:DEFAULT_GREETING | service/helpers.py | Module-level constant. |
 | Golden hello | (content in helpers.py) | service/helpers.py | Greeting string literal. |
 | golden profile | (content in README.md) | README.md | Description text. |
