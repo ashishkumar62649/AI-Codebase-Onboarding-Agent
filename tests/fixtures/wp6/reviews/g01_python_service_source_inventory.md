@@ -271,7 +271,7 @@ Note: RST content includes the underline marker line as part of the section chun
 | normalize_name, fetch_profile, get_profile, create_profile | function/async function | YES | function | function node IDs listed in §10.3 | `SymbolType.FUNCTION` maps to `GraphNodeType.FUNCTION`; async functions use the same symbol type. |
 | GreetingService | class | YES | class | `class:service/routes.py:GreetingService:8` | `SymbolType.CLASS` maps to `GraphNodeType.CLASS`. |
 | GreetingService.greet, GreetingService._audit | method | YES | method | method node IDs listed in §10.3 | `SymbolType.METHOD` maps to `GraphNodeType.METHOD`. |
-| test_greeting_service | Python test function | YES | test | `test:service/tests/TestRoutes.py:test_greeting_service:4` | Test-file functions map to `GraphNodeType.TEST`. |
+| test_greeting_service | Python test function | YES | test | `test:tests/TestRoutes.py:test_greeting_service:4` | Test-file functions map to `GraphNodeType.TEST`. |
 | GET `/profiles/{user_id}`, POST `/profiles` | route | YES | route | route node IDs listed in §10.2 | Each `ParsedRoute` creates a separate authoritative route node. |
 | four imported names | import | YES | import | import node IDs listed in §10.4 | Each parsed import record creates a separate import node. |
 
@@ -309,7 +309,7 @@ Route nodes are processed FIRST in `build_graph()` (lines 138-213) before regula
 | method:service/routes.py:_audit:12 | method | GreetingService._audit | service/routes.py | method:routes:GreetingService._audit | Method inside GreetingService. `_symbol_to_node_type` → METHOD. |
 | function:service/routes.py:get_profile:17 | function | get_profile | service/routes.py | function:routes:get_profile | Module-level async function. `_symbol_to_node_type` → FUNCTION. Node_id ≠ route_id → node emitted (not deduplicated). |
 | function:service/routes.py:create_profile:22 | function | create_profile | service/routes.py | function:routes:create_profile | Module-level function. `_symbol_to_node_type` → FUNCTION. Node_id ≠ route_id → node emitted. |
-| test:service/tests/TestRoutes.py:test_greeting_service:4 | test | test_greeting_service | tests/TestRoutes.py | test:tests:test_greeting_service | Function in test file. `_symbol_to_node_type` for file_type=TEST → GraphNodeType.TEST. |
+| test:tests/TestRoutes.py:test_greeting_service:4 | test | test_greeting_service | tests/TestRoutes.py | test:tests:test_greeting_service | Function in test file. `_symbol_to_node_type` for file_type=TEST → GraphNodeType.TEST. |
 
 Note: Variables (`DEFAULT_GREETING`, `app`, `__test__`) → `_symbol_to_node_type` returns `None` → no node. Route symbols (GET/POST) have node_id = route_id, already in node_id_set → skipped (line 234).
 
@@ -354,7 +354,7 @@ GRAPH_ORACLE_AMBIGUITIES=NONE
 | file:service/routes.py | method:service/routes.py:_audit:12 | defines | NONE | symbol at L12 in routes.py | Method `_audit` defined in routes.py. |
 | file:service/routes.py | function:service/routes.py:get_profile:17 | defines | NONE | symbol at L17 in routes.py | Function `get_profile` defined in routes.py. |
 | file:service/routes.py | function:service/routes.py:create_profile:22 | defines | NONE | symbol at L22 in routes.py | Function `create_profile` defined in routes.py. |
-| file:tests/TestRoutes.py | test:service/tests/TestRoutes.py:test_greeting_service:4 | defines | NONE | symbol at L4 in tests/TestRoutes.py | Test function `test_greeting_service` defined in TestRoutes.py. |
+| file:tests/TestRoutes.py | test:tests/TestRoutes.py:test_greeting_service:4 | defines | NONE | symbol at L4 in tests/TestRoutes.py | Test function `test_greeting_service` defined in TestRoutes.py. |
 | class:service/routes.py:GreetingService:8 | method:service/routes.py:greet:9 | defines | NONE | parent=GreetingService (in symbol metadata), method inside class | Method `greet` is child of `GreetingService` class. Edge from parent class to method (INFERRED confidence per graph_builder line 294). |
 | class:service/routes.py:GreetingService:8 | method:service/routes.py:_audit:12 | defines | NONE | parent=GreetingService (in symbol metadata), method inside class | Method `_audit` is child of `GreetingService` class. Edge from parent class to method (INFERRED confidence). |
 
