@@ -84,7 +84,7 @@ The scanner (file_scanner.py L179-194) sets `parse_status = PENDING` for `.py` f
 | function:routes:get_profile | function | get_profile | service/routes.py | 17 | 18 | NONE | `async def get_profile(user_id: str) -> dict[str, str]:` at line 17, body at line 18. Module-level `ast.AsyncFunctionDef`. Symbol extractor yields this as function type. |
 | function:routes:create_profile | function | create_profile | service/routes.py | 22 | 23 | NONE | `def create_profile(name: str) -> dict[str, str]:` at line 22, body at line 23. Module-level `ast.FunctionDef`. |
 
-**route_detector.py results (appended to symbols in python_ast.py):**
+**route_detector.py route identities (separate from manifest symbols):**
 
 | Semantic key | Kind | Qualified name | Path | Start | End | Parent | Source evidence |
 |---|---|---|---|---:|---:|---|---|
@@ -104,10 +104,60 @@ The scanner (file_scanner.py L179-194) sets `parse_status = PENDING` for `.py` f
 
 ### 4.2 Symbol Summary
 
-Total symbols extracted by symbol_extractor: 9 (3 helpers + 6 routes including variables).
-Route symbols appended by route_detector: 2 additional.
-Total in `pf.symbols` across all files: 11.
-Of these, 3 are variables (`DEFAULT_GREETING`, `app`, `__test__`) and 2 are route-duplicates of function symbols.
+The manifest symbol collection contains 11 source-level records: 3 variables, 2 helper functions, 1 class, 2 methods, 2 route-handler functions, and 1 test function. The two route identities are represented only in the manifest `routes` collection; they are not additional manifest symbols. The parser may carry route pseudo-symbols internally so route extraction and graph construction can share route IDs, but that internal representation is not copied into `symbols`.
+
+ROUTE_HANDLER_IS_FUNCTION_SYMBOL=True
+ROUTE_CREATES_SEPARATE_MANIFEST_SYMBOL=False
+ROUTE_HAS_SEPARATE_ROUTE_RECORD=True
+ROUTE_HAS_SEPARATE_GRAPH_NODE=True
+ROUTE_CHUNK_OWNER_KIND=handler_function_symbol
+CHUNK_OWNER_MUST_RESOLVE_TO_SYMBOL=True
+MODULE_VARIABLES_ARE_MANIFEST_SYMBOLS=True
+TEST_FUNCTION_IS_MANIFEST_SYMBOL=True
+MANIFEST_SYMBOL_COUNT=11
+
+The strict validator requires every non-null chunk owner to resolve to `symbols[].semantic_key`. Therefore route chunks are owned by `function:routes:get_profile` and `function:routes:create_profile`, not by route pseudo-symbol keys.
+
+### 4.3 Candidate Classification
+
+| # | Source construct | Source path | Source lines | Source kind | Manifest symbol | Manifest symbol kind | Route record | Graph node kind | Valid chunk owner | Reason |
+|---:|---|---|---:|---|---|---|---|---|---|---|
+| 1 | DEFAULT_GREETING | service/helpers.py | 1 | variable | YES | variable | NO | NONE | NONE | Source-level variable is retained in the manifest symbol oracle; variables are not graph nodes or chunks. |
+| 2 | normalize_name | service/helpers.py | 4-5 | function | YES | function | NO | function | function:helpers:normalize_name | Ordinary helper function. |
+| 3 | fetch_profile | service/helpers.py | 8-9 | async function | YES | function | NO | function | async_function:helpers:fetch_profile | Async function is represented as an ordinary function symbol. |
+| 4 | GreetingService | service/routes.py | 8-14 | class | YES | class | NO | class | class:routes:GreetingService | Class symbol with separate method symbols. |
+| 5 | GreetingService.greet | service/routes.py | 9-10 | method | YES | method | NO | method | method:routes:GreetingService.greet | Method symbol owned by the class. |
+| 6 | GreetingService._audit | service/routes.py | 12-13 | method | YES | method | NO | method | method:routes:GreetingService._audit | Method symbol owned by the class. |
+| 7 | app | service/routes.py | 5 | variable | YES | variable | NO | NONE | NONE | Source-level variable retained only in manifest symbols. |
+| 8 | get_profile | service/routes.py | 17-18 | route handler function | YES | function | YES | function | function:routes:get_profile | Route handler remains an ordinary function symbol. |
+| 9 | create_profile | service/routes.py | 22-23 | route handler function | YES | function | YES | function | function:routes:create_profile | Route handler remains an ordinary function symbol. |
+| 10 | __test__ | tests/TestRoutes.py | 1 | variable | YES | variable | NO | NONE | NONE | Source-level test-file variable; not a graph node or chunk. |
+| 11 | test_greeting_service | tests/TestRoutes.py | 4-5 | test function | YES | function | NO | test | test:tests:test_greeting_service | Test function is one manifest symbol and one test graph node. |
+| 12 | GET `/profiles/{user_id}` | service/routes.py | 16-18 | route identity | NO | NONE | YES | route | function:routes:get_profile | Route identity is represented by the route record and graph route node. |
+| 13 | POST `/profiles` | service/routes.py | 21-23 | route identity | NO | NONE | YES | route | function:routes:create_profile | Route identity is represented by the route record and graph route node. |
+
+### 4.4 Final Manifest-Symbol Table
+
+| # | Semantic key | Kind | Qualified name | Source path | Start | End | Parent semantic key | Source justification |
+|---:|---|---|---|---|---:|---:|---|---|
+| 1 | variable:helpers:DEFAULT_GREETING | variable | DEFAULT_GREETING | service/helpers.py | 1 | 1 | NONE | Module-level constant. |
+| 2 | function:helpers:normalize_name | function | normalize_name | service/helpers.py | 4 | 5 | NONE | Synchronous helper function. |
+| 3 | async_function:helpers:fetch_profile | function | fetch_profile | service/helpers.py | 8 | 9 | NONE | Asynchronous helper function represented as function kind. |
+| 4 | variable:routes:app | variable | app | service/routes.py | 5 | 5 | NONE | FastAPI application variable. |
+| 5 | class:routes:GreetingService | class | GreetingService | service/routes.py | 8 | 14 | NONE | Service class. |
+| 6 | method:routes:GreetingService.greet | method | GreetingService.greet | service/routes.py | 9 | 10 | class:routes:GreetingService | Class method. |
+| 7 | method:routes:GreetingService._audit | method | GreetingService._audit | service/routes.py | 12 | 13 | class:routes:GreetingService | Class method. |
+| 8 | function:routes:get_profile | function | get_profile | service/routes.py | 17 | 18 | NONE | GET route handler function. |
+| 9 | function:routes:create_profile | function | create_profile | service/routes.py | 22 | 23 | NONE | POST route handler function. |
+| 10 | variable:tests:__test__ | variable | __test__ | tests/TestRoutes.py | 1 | 1 | NONE | Test-file module variable. |
+| 11 | test:tests:test_greeting_service | function | test_greeting_service | tests/TestRoutes.py | 4 | 5 | NONE | Python test function. |
+
+FINAL_MANIFEST_SYMBOL_COUNT=11
+DUPLICATE_SYMBOL_SEMANTIC_KEYS=0
+DUPLICATE_SOURCE_CONSTRUCTS=0
+DANGLING_PARENT_KEYS=0
+INVALID_SYMBOL_PATHS=0
+INVALID_SYMBOL_RANGES=0
 
 ---
 
@@ -136,6 +186,27 @@ Internal fixture relationships: 3 of 4 imports connect `service/routes.py` → `
 | POST | /profiles | function:routes:create_profile | service/routes.py | 21 | 21 | 23 | `@app.post("/profiles")` at line 21, sync handler `create_profile` defined at line 22, body at line 23. |
 
 Both routes are detected by `route_detector.py` via `_parse_decorator()` which checks `deco.func.attr in FASTAPI_ATTRIBUTES` and `deco.func.value.id in ("app", "router")`. Both use `app` as the decorator target object.
+
+FINAL_ROUTE_COUNT=2
+UNRESOLVED_ROUTE_HANDLERS=0
+
+### 6.1 Route-Chunk Ownership
+
+| Route chunk semantic key | Method | Path pattern | Current owner | Correct owner | Owner resolves to symbol | Contract evidence |
+|---|---|---|---|---|---|---|
+| route:GET:/profiles/{user_id}:16-18 | GET | /profiles/{user_id} | route:GET:/profiles/{user_id}:service/routes.py:16 | function:routes:get_profile | YES | `_make_route_chunk()` creates the route chunk from `ParsedRoute`; the strict manifest validator requires a non-null owner to be in `symbols`. |
+| route:POST:/profiles:21-23 | POST | /profiles | route:POST:/profiles:service/routes.py:21 | function:routes:create_profile | YES | `_make_route_chunk()` creates the route chunk from `ParsedRoute`; the strict manifest validator requires a non-null owner to be in `symbols`. |
+
+GET_ROUTE_CHUNK_OWNER=function:routes:get_profile
+POST_ROUTE_CHUNK_OWNER=function:routes:create_profile
+UNRESOLVED_CHUNK_OWNERS=0
+ROUTE_CHUNK_OWNER_CORRECTIONS_REQUIRED=2
+
+GRAPH_ORACLE_CHANGE_REQUIRED=False
+GRAPH_NODE_COUNT_AFTER=21
+GRAPH_EDGE_COUNT_AFTER=21
+GRAPH_CHANGE_REASON=Manifest symbol filtering does not alter the accepted graph-node or graph-edge oracle; route identities remain separate graph route nodes.
+SYMBOL_ORACLE_AMBIGUITIES=NONE
 
 ---
 
@@ -206,8 +277,8 @@ The `_make_class_summary()` extracts the header line and any docstring. `Greetin
 
 | Chunk semantic key | Path | Type | Owner | Start | End | Embedding eligible | Skip reason | Manual justification |
 |---|---|---|---|---:|---:|---|---|---|
-| route:GET:/profiles/{user_id}:16-18 | service/routes.py | route | route:GET:/profiles/{user_id}:service/routes.py:16 | 16 | 18 | YES | NONE | Decorator at L16, handler body L17-18. Content = decorator + handler body lines 16-18. ChunkType.ROUTE. |
-| route:POST:/profiles:21-23 | service/routes.py | route | route:POST:/profiles:service/routes.py:21 | 21 | 23 | YES | NONE | Decorator at L21, handler body L22-23. Content = decorator + handler body lines 21-23. ChunkType.ROUTE. |
+| route:GET:/profiles/{user_id}:16-18 | service/routes.py | route | function:routes:get_profile | 16 | 18 | YES | NONE | Decorator at L16, handler body L17-18. Content = decorator + handler body lines 16-18. ChunkType.ROUTE. Owner is the ordinary handler-function symbol. |
+| route:POST:/profiles:21-23 | service/routes.py | route | function:routes:create_profile | 21 | 23 | YES | NONE | Decorator at L21, handler body L22-23. Content = decorator + handler body lines 21-23. ChunkType.ROUTE. Owner is the ordinary handler-function symbol. |
 
 ### 8.6 Python Test Chunks
 
@@ -555,7 +626,7 @@ Digests match the existing manifest integrity exactly.
 | scanned_files | YES | NONE — all 7 files accounted for |
 | excluded_files | NOT_APPLICABLE | NONE — no files excluded from this fixture |
 | parse_statuses | YES | NONE — 4 parsed, 3 not_applicable (all non-Python files) |
-| symbols | YES | NONE — 11 symbols identified (9 non-route + 2 route) |
+| symbols | YES | NONE — 11 manifest symbols identified; 2 route identities remain separate route records |
 | imports | YES | NONE — 4 import records from 2 import statements |
 | routes | YES | NONE — 2 routes (GET, POST) accounted for |
 | tests | YES | NONE — 1 test function accounted for |
