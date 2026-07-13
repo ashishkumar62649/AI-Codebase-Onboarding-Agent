@@ -1,5 +1,6 @@
 """Strict test-only schema checks for future WP6 semantic manifests."""
 
+import posixpath
 import re
 
 REQUIRED = {"fixture_id", "fixture_name", "purpose", "scanned_files", "excluded_files", "parse_statuses", "symbols", "imports", "routes", "tests", "chunks", "graph_nodes", "graph_edges", "safe_search_terms", "warnings", "errors", "secret_oracle", "deterministic_invariants"}
@@ -47,7 +48,16 @@ def validate_manifest(manifest):
             for key in ("path", "source_path"):
                 if key in record: _path(f"{section}[{index}].{key}", record[key])
             _lines(f"{section}[{index}]", record)
-            key = (record.get("semantic_key") or (record.get("method"), record.get("route_path"), record.get("handler_semantic_key")) or (record.get("source_semantic_key"), record.get("target_semantic_key"), record.get("edge_type"), record.get("qualifier")))
+            if section == "parse_statuses":
+                key = posixpath.normpath(record["path"])
+            elif "semantic_key" in fields:
+                key = record["semantic_key"]
+            elif section == "routes":
+                key = (record["method"], record["route_path"], record["handler_semantic_key"])
+            elif section == "imports":
+                key = tuple(record[field] for field in sorted(fields))
+            else:
+                key = (record["source_semantic_key"], record["target_semantic_key"], record["edge_type"], record["qualifier"])
             if record.get("semantic_key") and re.fullmatch(r"[0-9a-f]{8}-[0-9a-f-]{27}", record["semantic_key"]): _fail(section, "uses an opaque generated ID")
             if key in seen: _fail(section, "contains duplicate semantic identity")
             seen.add(key)

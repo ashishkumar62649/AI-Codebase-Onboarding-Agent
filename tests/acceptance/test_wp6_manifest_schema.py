@@ -1,4 +1,6 @@
 import copy
+import json
+from pathlib import Path
 import pytest
 from tests.support.wp6_manifest import validate_manifest
 
@@ -8,6 +10,39 @@ def valid():
 
 
 def test_valid_manifest(): validate_manifest(valid())
+
+
+def _parse_status(path):
+    return {"path": path, "status": "parsed", "language": "Python", "diagnostic_category": None}
+
+
+def test_parse_statuses_use_normalized_path_identity():
+    manifest = valid()
+    manifest["parse_statuses"] = [_parse_status("app.py"), _parse_status("service.py")]
+    validate_manifest(manifest)
+
+    manifest["parse_statuses"].append(_parse_status("app.py"))
+    with pytest.raises(ValueError, match="parse_statuses: contains duplicate semantic identity"):
+        validate_manifest(manifest)
+
+    manifest["parse_statuses"] = [_parse_status("app.py"), _parse_status("./app.py")]
+    with pytest.raises(ValueError, match="parse_statuses: contains duplicate semantic identity"):
+        validate_manifest(manifest)
+
+
+def test_seven_distinct_parse_statuses_are_accepted():
+    manifest = valid()
+    manifest["parse_statuses"] = [_parse_status(path) for path in (
+        "guide.rst", "README.md", "service/__init__.py", "service/helpers.py",
+        "service/routes.py", "settings.toml", "tests/TestRoutes.py",
+    )]
+    validate_manifest(manifest)
+
+
+def test_actual_g01_manifest_reports_legacy_fields():
+    path = Path(__file__).parents[1] / "fixtures" / "wp6" / "manifests" / "python_service.json"
+    with pytest.raises(ValueError, match=r"required fields mismatch: \['counts', 'files_expected_to_scan', 'integrity'\]"):
+        validate_manifest(json.loads(path.read_text(encoding="utf-8")))
 
 @pytest.mark.parametrize("case", ["imports","chunks","graph_nodes","graph_edges","unknown","absolute","traversal","range","symbol","route","chunk","node","edge","source","target","parent","owner","secret","fcode","opaque"], ids=str)
 def test_invalid_manifest(case):
