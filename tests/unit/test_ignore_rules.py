@@ -3,7 +3,7 @@
 import os
 import tempfile
 
-from fcode.scanner.ignore_rules import IgnoreRules
+from deeporra.scanner.ignore_rules import IgnoreRules
 
 
 def test_hardcoded_git_dir():
@@ -14,10 +14,10 @@ def test_hardcoded_git_dir():
         assert rules.is_ignored(git_path)
 
 
-def test_hardcoded_fcode_dir():
+def test_hardcoded_DEEPORRA_dir():
     with tempfile.TemporaryDirectory() as tmp:
         rules = IgnoreRules(tmp)
-        path = os.path.join(tmp, ".fcode", "index.db")
+        path = os.path.join(tmp, ".deeporra", "index.db")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         assert rules.is_ignored(path)
 
@@ -90,9 +90,9 @@ def test_gitignore_respected():
         assert not rules.is_ignored(py_path)
 
 
-def test_fcodeignore_supplements():
+def test_DeepOrraignore_supplements():
     with tempfile.TemporaryDirectory() as tmp:
-        with open(os.path.join(tmp, ".fcodeignore"), "w") as f:
+        with open(os.path.join(tmp, ".deeporraignore"), "w") as f:
             f.write("secret/\n")
         rules = IgnoreRules(tmp)
         secret_dir = os.path.join(tmp, "secret")

@@ -1,22 +1,22 @@
-# 04_DATA_MODEL.md — F Code Data Model
+# 04_DATA_MODEL.md — DeepOrra Data Model
 
 ## 1. Storage Overview
 
-F Code uses two local storage systems:
+DeepOrra uses two local storage systems:
 
 - **SQLite** — structured metadata, graph relationships, keyword search (FTS5)
 - **Chroma** — vector embeddings for semantic search
 
-All storage lives in `.fcode/` inside the indexed repository.
+All storage lives in `.deeporra/` inside the indexed repository.
 
 ## 2. Local Index Location
 
 ```
 <repo_path>/
-├── .fcode/
+├── .deeporra/
 │   ├── index.db          # SQLite database
 │   ├── chroma/           # Chroma persistent store
-│   ├── config.json       # F Code configuration (see Section 22)
+│   ├── config.json       # DeepOrra configuration (see Section 22)
 │   └── reports/          # Generated reports (wiki, etc.)
 ```
 
@@ -228,7 +228,7 @@ If the embedding model changes, all vectors must be regenerated.
 | completed_at | TIMESTAMP | When indexing completed |
 | error_message | TEXT | Sanitized error message if status is `error` |
 
-**Writers:** indexer (via `fcode/indexing/index_service.py`)
+**Writers:** indexer (via `deeporra/indexing/index_service.py`)
 **Readers:** dashboard, mcp_server, CLI status command
 
 ## 15. SQLite Tables
@@ -481,7 +481,7 @@ FTS5 rebuild occurs after the SQLite content transaction commits, using the comp
 
 For the WP5 Step 4 fresh-scope staging API, SQLite metadata, external-content FTS rebuild, the nonterminal `storing` status, and their verification counts use one connection and one transaction. Any Step 4 write failure rolls back the new repository scope. The post-commit rebuild described above remains the Step 5 coordinated full-replacement contract.
 
-WP5 Step 5 stores each complete rebuild under `.fcode/generations/<generation>/` with its SQLite database, FTS tables, and local Chroma directory together. A `.fcode/staging/<generation>.json` marker identifies an inactive build while it is being written. Only a verified generation with `index_status.status = 'complete'` may be named by the atomically replaced `.fcode/active.json` pointer. The prior generation is retained until the new active generation is reopened and verified; failed stages never become active.
+WP5 Step 5 stores each complete rebuild under `.deeporra/generations/<generation>/` with its SQLite database, FTS tables, and local Chroma directory together. A `.deeporra/staging/<generation>.json` marker identifies an inactive build while it is being written. Only a verified generation with `index_status.status = 'complete'` may be named by the atomically replaced `.deeporra/active.json` pointer. The prior generation is retained until the new active generation is reopened and verified; failed stages never become active.
 
 Every completed v2 generation stores all canonical `IndexCounts` fields in its `count_*` columns. Status resolves the active pointer once and reads that single database without initializing, migrating, or mutating it. A prior generation that lacks this complete count snapshot is unavailable rather than inaccurately reconstructed.
 
@@ -509,13 +509,13 @@ If SQLite is compiled without FTS5 support:
 - FTS5 unavailable: log warning, activate LIKE fallback, record one warning, allow completion.
 - FTS5 creation failure (other than unavailability): use `fts_failure`, set `status = 'error'`, run Phase C cleanup. Do not silently continue with partially populated FTS.
 - FTS5 rebuild count mismatch: set `status = 'error'`, run Phase C cleanup.
-- The active search mode (`fts5` or `like_fallback`) must be visible in `index_status.active_search_mode` and in `fcode status` output.
+- The active search mode (`fts5` or `like_fallback`) must be visible in `index_status.active_search_mode` and in `deeporra status` output.
 
 ## 19. Data Retention Rules
 
-- All index data is stored locally in `.fcode/`
-- Index data persists until user deletes `.fcode/` or runs `fcode index <repo_path>` (which performs a full rebuild)
-- `fcode index` always performs a full rebuild. No `--force` flag exists in the current build.
+- All index data is stored locally in `.deeporra/`
+- Index data persists until user deletes `.deeporra/` or runs `deeporra index <repo_path>` (which performs a full rebuild)
+- `deeporra index` always performs a full rebuild. No `--force` flag exists in the current build.
 - Tool call logs are retained indefinitely (local only)
 - Reports are regenerated on demand or invalidated on reindex
 - No data is sent to external services
@@ -533,7 +533,7 @@ If SQLite is compiled without FTS5 support:
 ## 21. Migration Rules
 
 - Schema changes are applied via SQL migration scripts
-- Migrations are stored in `fcode/storage/migrations/`
+- Migrations are stored in `deeporra/storage/migrations/`
 - Each migration has an up and down script
 - Migrations are applied automatically on first use
 - Version tracked in SQLite `schema_version` table
@@ -635,10 +635,10 @@ A full rebuild replaces the active index for a repository. The rebuild has three
 Before deleting any existing index data:
 
 1. Validate the repository path exists and is a directory
-2. Validate `.fcode/config.json` exists and is valid
-3. Verify `.fcode/` directory is writable
-4. Verify SQLite can be opened at `.fcode/index.db`
-5. Verify Chroma can be opened at `.fcode/chroma/`
+2. Validate `.deeporra/config.json` exists and is valid
+3. Verify `.deeporra/` directory is writable
+4. Verify SQLite can be opened at `.deeporra/index.db`
+5. Verify Chroma can be opened at `.deeporra/chroma/`
 6. Verify the embedding model is available in local cache using local-only loading (no hardcoded cache path)
 7. Verify the configured model dimension is 384
 8. Perform one read-only discovery scan; count eligible files and verify they do not exceed limits (10,000 files, 52,428,800 bytes total)
@@ -723,7 +723,7 @@ If Chroma writing, FTS population, verification, or final status update fails af
 6. Set `index_status.completed_at` to current timestamp
 7. Write a sanitized `error_message` (max 500 chars, no secrets, no stack traces)
 8. Ensure the repository cannot be returned as a complete index
-9. Require the user to run `fcode index <repo_path>` again
+9. Require the user to run `deeporra index <repo_path>` again
 
 **The previous index is NOT restored after Phase C has begun.** This limitation is explicit. The destructive replacement in Phase C step 5 is irreversible.
 
@@ -802,4 +802,4 @@ Field order is fixed. All fields directly accessible after the method returns.
 
 ## 27. Config File Schema
 
-See `03_SYSTEM_ARCHITECTURE.md` Section 21 for the full `.fcode/config.json` schema definition. The config file stores index configuration, embedding model settings, storage paths, and privacy settings.
+See `03_SYSTEM_ARCHITECTURE.md` Section 21 for the full `.deeporra/config.json` schema definition. The config file stores index configuration, embedding model settings, storage paths, and privacy settings.

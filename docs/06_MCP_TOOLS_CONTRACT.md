@@ -1,8 +1,8 @@
-# 06_MCP_TOOLS_CONTRACT.md — F Code MCP Tools Contract
+# 06_MCP_TOOLS_CONTRACT.md — DeepOrra MCP Tools Contract
 
 ## 1. MCP Overview
 
-F Code exposes read-only, planning-only tools to coding agents via the Model Context Protocol (MCP) stdio transport. These tools help agents find existing code, check for duplicates, understand impact, and plan minimal changes — all without writing files or executing commands.
+DeepOrra exposes read-only, planning-only tools to coding agents via the Model Context Protocol (MCP) stdio transport. These tools help agents find existing code, check for duplicates, understand impact, and plan minimal changes — all without writing files or executing commands.
 
 ## 2. Local Stdio Principle
 
@@ -23,7 +23,7 @@ Current build MCP tools must NOT:
 - Upload code to any server
 - Access the network
 - Execute user code
-- Modify the `.fcode/` index
+- Modify the `.deeporra/` index
 
 ## 5. Current Build Tool List
 
@@ -609,10 +609,10 @@ Make the smallest backward-compatible change, update every identified caller, ro
 ```
 
 **Core modules (always high risk if changed):**
-- `fcode/storage/sqlite_store.py`
-- `fcode/storage/chroma_store.py`
-- `fcode/retrieval/hybrid_ranker.py`
-- `fcode/graph/graph_builder.py`
+- `deeporra/storage/sqlite_store.py`
+- `deeporra/storage/chroma_store.py`
+- `deeporra/retrieval/hybrid_ranker.py`
+- `deeporra/graph/graph_builder.py`
 
 ## 8. Reason Text Generation Rules
 
@@ -749,9 +749,9 @@ The MCP server enforces read-only behavior:
 ## 14. Setup Flow
 
 **General setup:**
-1. Install F Code: `pip install fcode`
-2. Index repository: `fcode index /path/to/repo`
-3. Start MCP server: `fcode mcp --repo /path/to/repo`
+1. Install DeepOrra: `pip install deeporra`
+2. Index repository: `deeporra index /path/to/repo`
+3. Start MCP server: `deeporra mcp --repo /path/to/repo`
 4. Configure coding agent to use the MCP server
 
 ## 15. Claude Code Setup
@@ -760,8 +760,8 @@ Add to `.claude/settings.json`:
 ```json
 {
   "mcpServers": {
-    "fcode": {
-      "command": "fcode",
+    "deeporra": {
+      "command": "deeporra",
       "args": ["mcp", "--repo", "/path/to/repo"]
     }
   }
@@ -772,8 +772,8 @@ Add to `.claude/settings.json`:
 
 Add to `.codex/config.toml`:
 ```toml
-[mcp_servers.fcode]
-command = "fcode"
+[mcp_servers.deeporra]
+command = "deeporra"
 args = ["mcp", "--repo", "/path/to/repo"]
 ```
 
@@ -783,8 +783,8 @@ Add to MCP config:
 ```json
 {
   "mcpServers": {
-    "fcode": {
-      "command": "fcode",
+    "deeporra": {
+      "command": "deeporra",
       "args": ["mcp", "--repo", "/path/to/repo"]
     }
   }
@@ -797,8 +797,8 @@ Add to `opencode.json`:
 ```json
 {
   "mcp": {
-    "fcode": {
-      "command": "fcode",
+    "deeporra": {
+      "command": "deeporra",
       "args": ["mcp", "--repo", "/path/to/repo"]
     }
   }

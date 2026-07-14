@@ -11,14 +11,14 @@ from pathlib import Path
 
 import pytest
 
-from fcode.chunking.chunker import Chunker
-from fcode.contracts import FCodeConfig, IndexState
-from fcode.embeddings.encoder import EXPECTED_DIMENSION, EmbeddingEncoder
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing import IndexService
-from fcode.parser.python_ast import parse
-from fcode.querying import QueryService
-from fcode.scanner.file_scanner import scan
+from deeporra.chunking.chunker import Chunker
+from deeporra.contracts import DeepOrraConfig, IndexState
+from deeporra.embeddings.encoder import EXPECTED_DIMENSION, EmbeddingEncoder
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing import IndexService
+from deeporra.parser.python_ast import parse
+from deeporra.querying import QueryService
+from deeporra.scanner.file_scanner import scan
 
 
 class _FakeSentenceTransformer:
@@ -97,7 +97,7 @@ def _write_fixture(repo: Path):
 def _source_digest(repo: Path) -> str:
     digests = []
     for path in sorted(repo.rglob("*")):
-        if path.is_file() and not path.relative_to(repo).parts[0].startswith(".fcode"):
+        if path.is_file() and not path.relative_to(repo).parts[0].startswith(".deeporra"):
             digests.append(hashlib.sha256(path.read_bytes()).hexdigest())
     return hashlib.sha256("".join(digests).encode()).hexdigest()
 
@@ -112,7 +112,7 @@ def indexed_repo(tmp_path, monkeypatch):
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
 
-    result = _create_service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = _create_service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert result.run_result.state == IndexState.COMPLETE
     yield repo
 

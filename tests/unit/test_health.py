@@ -5,9 +5,9 @@ import sys
 
 from typer.testing import CliRunner
 
-from fcode.cli.main import app
-from fcode.contracts import DiagnosticSeverity, DoctorCheck, DoctorResult
-from fcode.utils import health
+from deeporra.cli.main import app
+from deeporra.contracts import DiagnosticSeverity, DoctorCheck, DoctorResult
+from deeporra.utils import health
 
 
 def test_doctor_ready_environment(monkeypatch, tmp_path):
@@ -33,7 +33,7 @@ def test_missing_local_model_reports_exception_type(monkeypatch):
     class Encoder:
         def ensure_available(self):
             raise RuntimeError("C:/private/cache/token")
-    monkeypatch.setattr("fcode.embeddings.EmbeddingEncoder", Encoder)
+    monkeypatch.setattr("deeporra.embeddings.EmbeddingEncoder", Encoder)
     check = health.check_local_embedding_model()
     assert not check.passed
     assert "Local embedding model is unavailable" in check.message
@@ -52,7 +52,7 @@ def test_local_model_error_includes_type(monkeypatch):
     class Encoder:
         def ensure_available(self):
             raise ValueError("something broke")
-    monkeypatch.setattr("fcode.embeddings.EmbeddingEncoder", Encoder)
+    monkeypatch.setattr("deeporra.embeddings.EmbeddingEncoder", Encoder)
     check = health.check_local_embedding_model()
     assert "ValueError" in check.message
 
@@ -64,7 +64,7 @@ def test_fts_unavailable_is_reported(monkeypatch):
 
 def test_doctor_failure_is_sanitized(monkeypatch):
     monkeypatch.setattr(
-        "fcode.cli.commands.doctor_cmd.run_doctor",
+        "deeporra.cli.commands.doctor_cmd.run_doctor",
         lambda **_: DoctorResult([DoctorCheck("local_embedding_model", False, "Local embedding model is unavailable", DiagnosticSeverity.ERROR)]),
     )
     result = CliRunner().invoke(app, ["doctor", "."])

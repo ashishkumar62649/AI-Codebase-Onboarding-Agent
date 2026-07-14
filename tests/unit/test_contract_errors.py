@@ -1,6 +1,6 @@
 """Error code tests — verify ErrorCode and McpErrorCode conventions."""
 
-from fcode.contracts.errors import ErrorCode, McpErrorCode
+from deeporra.contracts.errors import ErrorCode, McpErrorCode
 
 
 class TestErrorCodeContract:

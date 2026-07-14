@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
-from fcode.inputs import RepositoryInputService
-from fcode.inputs.errors import (
+from deeporra.inputs import RepositoryInputService
+from deeporra.inputs.errors import (
     InvalidRepositorySourceError,
     RepositorySourceNotFoundError,
     UnsupportedRepositoryUrlError,
 )
-from fcode.inputs.models import InputKind
+from deeporra.inputs.models import InputKind
 
 SERVICE = RepositoryInputService()
 

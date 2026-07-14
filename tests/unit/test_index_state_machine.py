@@ -2,8 +2,8 @@
 
 import pytest
 
-from fcode.contracts.enums import IndexPhase, IndexState
-from fcode.indexing.state_machine import (
+from deeporra.contracts.enums import IndexPhase, IndexState
+from deeporra.indexing.state_machine import (
     IndexStateMachine,
     InvalidIndexStateTransition,
 )

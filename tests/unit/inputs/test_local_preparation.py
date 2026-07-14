@@ -5,13 +5,13 @@ import tempfile
 
 import pytest
 
-from fcode.inputs import PreparedRepository
-from fcode.inputs.local_preparation import prepare_local
-from fcode.inputs.errors import (
+from deeporra.inputs import PreparedRepository
+from deeporra.inputs.local_preparation import prepare_local
+from deeporra.inputs.errors import (
     InvalidRepositorySourceError,
     RepositorySourceNotFoundError,
 )
-from fcode.inputs.models import InputKind
+from deeporra.inputs.models import InputKind
 
 
 def test_existing_normal_directory_accepted():

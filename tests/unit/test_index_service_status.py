@@ -4,18 +4,18 @@ import json
 
 import pytest
 
-from fcode.contracts import IndexCounts, IndexState
-from fcode.indexing import ActiveStatusReader, IndexService
-from fcode.indexing.full_rebuild import FullRebuildError
-from fcode.storage.sqlite_store import SQLiteStore
-from fcode.storage.migrations.v001_initial import apply as apply_v001
+from deeporra.contracts import IndexCounts, IndexState
+from deeporra.indexing import ActiveStatusReader, IndexService
+from deeporra.indexing.full_rebuild import FullRebuildError
+from deeporra.storage.sqlite_store import SQLiteStore
+from deeporra.storage.migrations.v001_initial import apply as apply_v001
 
 
 def _active_status_repo(tmp_path):
     generation = "generation-status"
-    root = tmp_path / ".fcode" / "generations" / generation
+    root = tmp_path / ".deeporra" / "generations" / generation
     root.mkdir(parents=True)
-    (tmp_path / ".fcode" / "active.json").write_text(json.dumps({"generation": generation}), encoding="utf-8")
+    (tmp_path / ".deeporra" / "active.json").write_text(json.dumps({"generation": generation}), encoding="utf-8")
     store = SQLiteStore(str(root / "index.db"))
     store.connect()
     store.initialize_schema()
@@ -36,9 +36,9 @@ def test_status_reader_reads_active_snapshot_without_creating_workspace(tmp_path
 
 
 def test_status_reader_rejects_old_generation_without_mutating_it(tmp_path):
-    root = tmp_path / ".fcode" / "generations" / "generation-old"
+    root = tmp_path / ".deeporra" / "generations" / "generation-old"
     root.mkdir(parents=True)
-    pointer = tmp_path / ".fcode" / "active.json"
+    pointer = tmp_path / ".deeporra" / "active.json"
     pointer.write_text(json.dumps({"generation": "generation-old"}), encoding="utf-8")
     store = SQLiteStore(str(root / "index.db"))
     store.connect()
@@ -64,7 +64,7 @@ def test_status_methods_delegate_to_one_reader_snapshot():
         def __init__(self): self.calls = 0
         def read(self):
             self.calls += 1
-            from fcode.contracts import IndexStatusRecord
+            from deeporra.contracts import IndexStatusRecord
             return IndexStatusRecord(state=IndexState.COMPLETE, counts=IndexCounts(chunks=7))
     reader = Reader()
     service = IndexService(object(), object(), object(), status_reader=reader)

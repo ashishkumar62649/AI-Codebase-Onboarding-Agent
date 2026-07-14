@@ -21,7 +21,7 @@ def _fail(section, message):
 
 
 def _path(section, value):
-    if not isinstance(value, str) or not value or "\\" in value or value.startswith(("/", ".fcode")) or re.match(r"^[A-Za-z]:", value) or ".." in value.split("/"):
+    if not isinstance(value, str) or not value or "\\" in value or value.startswith(("/", ".deeporra")) or re.match(r"^[A-Za-z]:", value) or ".." in value.split("/"):
         _fail(section, "must be a normalized repository-relative path")
     if any(token in value.lower() for token in (".db", ".sqlite", "chroma", "generation-", "active.json", "rebuild.lock")):
         _fail(section, "contains a generated artifact path")

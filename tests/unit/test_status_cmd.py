@@ -3,7 +3,7 @@
 import subprocess
 import sys
 
-from fcode.cli.commands.status_cmd import (
+from deeporra.cli.commands.status_cmd import (
     get_status_service,
     set_status_service,
 )
@@ -34,7 +34,7 @@ class TestComposition:
         fake = FakeStatusService()
         set_status_service(fake)
         result = subprocess.run(
-            [sys.executable, "-m", "fcode", "status"],
+            [sys.executable, "-m", "deeporra", "status"],
             capture_output=True, text=True, timeout=15,
         )
         assert result.returncode == 0
@@ -44,7 +44,7 @@ class TestComposition:
 class TestCommand:
     def test_no_active_index_is_healthy(self):
         result = subprocess.run(
-            [sys.executable, "-m", "fcode", "status"],
+            [sys.executable, "-m", "deeporra", "status"],
             capture_output=True, text=True, timeout=15,
         )
         assert result.returncode == 0
@@ -52,7 +52,7 @@ class TestCommand:
 
     def test_no_active_index_with_explicit_path(self):
         result = subprocess.run(
-            [sys.executable, "-m", "fcode", "status", "."],
+            [sys.executable, "-m", "deeporra", "status", "."],
             capture_output=True, text=True, timeout=15,
         )
         assert result.returncode == 0

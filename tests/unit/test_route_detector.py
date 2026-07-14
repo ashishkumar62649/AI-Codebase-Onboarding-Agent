@@ -1,8 +1,8 @@
 """Tests for route_detector.py."""
 
 import ast
-from fcode.parser.route_detector import extract_routes
-from fcode.contracts import HttpMethod
+from deeporra.parser.route_detector import extract_routes
+from deeporra.contracts import HttpMethod
 
 
 def _routes(code):
@@ -185,7 +185,7 @@ def list_users():
 """
     results = _routes(code)
     route, sym = results[0]
-    from fcode.contracts import SymbolType
+    from deeporra.contracts import SymbolType
     assert sym.symbol_type == SymbolType.ROUTE
 
 

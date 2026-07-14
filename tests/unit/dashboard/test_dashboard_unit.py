@@ -1,4 +1,4 @@
-﻿"""Focused unit tests for the dashboard module â€” no Streamlit server required."""
+"""Focused unit tests for the dashboard module — no Streamlit server required."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 import pytest
 
-from fcode.querying import (
+from deeporra.querying import (
     CodeSearchResult,
     ImpactAnalysis,
     QueryValidationError,
@@ -20,7 +20,7 @@ from fcode.querying import (
 )
 
 
-# â”€â”€ Fake QueryService â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Fake QueryService ────────────────────────────────────────────────────
 
 
 @dataclass
@@ -118,7 +118,7 @@ class _FakeQueryService:
             raise QueryValidationError("Query too long")
 
 
-# â”€â”€ Fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Fixtures ─────────────────────────────────────────────────────────────
 
 
 @pytest.fixture
@@ -259,23 +259,23 @@ def impact_result() -> ImpactAnalysis:
     )
 
 
-# â”€â”€ Test 1: Module imports work â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 1: Module imports work ─────────────────────────────────────────
 
 
 class TestDashboardImports:
     """Verify the dashboard package imports without starting a server."""
 
     def test_import_dashboard_package(self) -> None:
-        import fcode.dashboard
-        assert hasattr(fcode.dashboard, "__all__")
+        import deeporra.dashboard
+        assert hasattr(deeporra.dashboard, "__all__")
 
     def test_import_dashboard_main(self) -> None:
-        import fcode.dashboard.__main__
-        assert hasattr(fcode.dashboard.__main__, "main")
+        import deeporra.dashboard.__main__
+        assert hasattr(deeporra.dashboard.__main__, "main")
 
     def test_import_app_functions(self) -> None:
-        from fcode.dashboard.api import safe_summary, safe_search, safe_symbols
-        from fcode.dashboard.api import safe_routes, safe_related, safe_impact
+        from deeporra.dashboard.api import safe_summary, safe_search, safe_symbols
+        from deeporra.dashboard.api import safe_routes, safe_related, safe_impact
         assert callable(safe_summary)
         assert callable(safe_search)
         assert callable(safe_symbols)
@@ -284,22 +284,22 @@ class TestDashboardImports:
         assert callable(safe_impact)
 
 
-# â”€â”€ Test 2: Uses QueryService, not direct storage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 2: Uses QueryService, not direct storage ────────────────────────
 
 
 class TestUsesQueryService:
     """Verify the dashboard uses QueryService rather than direct storage."""
 
-    APP_SOURCE = Path(__file__).parents[3] / "fcode" / "dashboard" / "app.py"
+    APP_SOURCE = Path(__file__).parents[3] / "DeepOrra" / "dashboard" / "app.py"
 
     def test_imports_query_service(self) -> None:
         source = self.APP_SOURCE.read_text(encoding="utf-8")
-        assert "from fcode.querying import" in source
+        assert "from deeporra.querying import" in source
 
     def test_does_not_import_storage(self) -> None:
         source = self.APP_SOURCE.read_text(encoding="utf-8")
-        assert "from fcode.storage" not in source
-        assert "import fcode.storage" not in source
+        assert "from deeporra.storage" not in source
+        assert "import deeporra.storage" not in source
         assert "SQLiteStore" not in source
         assert "ChromaStore" not in source
 
@@ -308,14 +308,14 @@ class TestUsesQueryService:
         assert "chroma" not in source.lower()
 
 
-# â”€â”€ Test 3: Repository summary renders expected values â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 3: Repository summary renders expected values ───────────────────
 
 
 class TestRepositorySummary:
     """Verify safe_summary returns proper values."""
 
     def test_summary_returns_summary_object(self, summary: RepositorySummary) -> None:
-        from fcode.dashboard.api import safe_summary
+        from deeporra.dashboard.api import safe_summary
         qs = _FakeQueryService(summary=summary)
         result = safe_summary(qs)
         assert isinstance(result, RepositorySummary)
@@ -325,7 +325,7 @@ class TestRepositorySummary:
         assert result.symbol_count == 150
 
     def test_summary_shows_all_expected_fields(self, summary: RepositorySummary) -> None:
-        from fcode.dashboard.api import safe_summary
+        from deeporra.dashboard.api import safe_summary
         qs = _FakeQueryService(summary=summary)
         result = safe_summary(qs)
         assert isinstance(result, RepositorySummary)
@@ -344,47 +344,47 @@ class TestRepositorySummary:
         assert result.fatal_error_count == 0
 
 
-# â”€â”€ Test 4: Missing index returns safe error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 4: Missing index returns safe error ─────────────────────────────
 
 
 class TestMissingIndex:
     """Verify missing or unindexed repository returns safe error strings."""
 
     def test_not_indexed_returns_string(self) -> None:
-        from fcode.dashboard.api import safe_summary, safe_search, safe_symbols
+        from deeporra.dashboard.api import safe_summary, safe_search, safe_symbols
         qs = _FakeQueryService(raise_on="not_indexed")
         result = safe_summary(qs)
         assert isinstance(result, str)
         assert "not indexed" in result.lower()
 
     def test_not_indexed_search_returns_string(self) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(raise_on="not_indexed")
         result = safe_search(qs, "test", 10, "text")
         assert isinstance(result, str)
 
     def test_not_indexed_symbols_returns_string(self) -> None:
-        from fcode.dashboard.api import safe_symbols
+        from deeporra.dashboard.api import safe_symbols
         qs = _FakeQueryService(raise_on="not_indexed")
         result = safe_symbols(qs, "test", 20, False)
         assert isinstance(result, str)
 
     def test_generic_error_returns_string(self) -> None:
-        from fcode.dashboard.api import safe_summary
+        from deeporra.dashboard.api import safe_summary
         qs = _FakeQueryService(raise_on="generic")
         result = safe_summary(qs)
         assert isinstance(result, str)
         assert "error" in result.lower() or "error" in result
 
 
-# â”€â”€ Test 5: Text search results render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 5: Text search results render ──────────────────────────────────
 
 
 class TestSearchResults:
     """Verify text search returns proper results."""
 
     def test_text_search_returns_results(self, search_results: list[CodeSearchResult]) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(search_results=search_results)
         results = safe_search(qs, "greet", 10, "text")
         assert isinstance(results, list)
@@ -394,7 +394,7 @@ class TestSearchResults:
         assert results[0].text_score == 0.85
 
     def test_semantic_search_returns_results(self, search_results: list[CodeSearchResult]) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(search_results=search_results)
         results = safe_search(qs, "greet", 10, "semantic")
         assert isinstance(results, list)
@@ -403,34 +403,34 @@ class TestSearchResults:
         assert all(r.text_score is None for r in results)
 
     def test_hybrid_search_returns_results(self, search_results: list[CodeSearchResult]) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(search_results=search_results)
         results = safe_search(qs, "greet", 10, "hybrid")
         assert isinstance(results, list)
         assert len(results) > 0
 
 
-# â”€â”€ Test 6: Semantic unavailable error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 6: Semantic unavailable error ──────────────────────────────────
 
 
 class TestSemanticUnavailable:
     """Verify semantic-unavailable errors are shown honestly."""
 
     def test_semantic_mode_raises_validation_error(self) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(raise_on="generic")
         result = safe_search(qs, "test", 10, "semantic")
         assert isinstance(result, str)
 
 
-# â”€â”€ Test 7: Hybrid degraded labeled text-only â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 7: Hybrid degraded labeled text-only ────────────────────────────
 
 
 class TestHybridDegraded:
     """Verify hybrid degraded results are labeled."""
 
     def test_hybrid_degraded_results_show_text_source(self, search_results: list[CodeSearchResult]) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         for r in search_results:
             object.__setattr__(r, "match_source", "text")
             object.__setattr__(r, "semantic_score", None)
@@ -440,18 +440,18 @@ class TestHybridDegraded:
         assert all(r.match_source == "text" for r in results)
 
     def test_app_script_checks_hybrid_degraded(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
         assert "hybrid" in source.lower() and "degraded" in source.lower()
 
 
-# â”€â”€ Test 8: Symbol results render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 8: Symbol results render ───────────────────────────────────────
 
 
 class TestSymbolResults:
     """Verify symbol lookup returns proper results."""
 
     def test_symbol_results_have_expected_fields(self, symbol_results: list[SymbolRecord]) -> None:
-        from fcode.dashboard.api import safe_symbols
+        from deeporra.dashboard.api import safe_symbols
         qs = _FakeQueryService(symbol_results=symbol_results)
         results = safe_symbols(qs, "Calculator", 20, False)
         assert isinstance(results, list)
@@ -461,21 +461,21 @@ class TestSymbolResults:
         assert results[1].parent_semantic_key == "Calculator"
 
     def test_exact_symbol_lookup(self, symbol_results: list[SymbolRecord]) -> None:
-        from fcode.dashboard.api import safe_symbols
+        from deeporra.dashboard.api import safe_symbols
         qs = _FakeQueryService(symbol_results=symbol_results)
         results = safe_symbols(qs, "Calculator", 20, True)
         assert isinstance(results, list)
         assert len(results) <= 2
 
 
-# â”€â”€ Test 9: Route results render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 9: Route results render ────────────────────────────────────────
 
 
 class TestRouteResults:
     """Verify route lookup returns proper results."""
 
     def test_route_results_have_expected_fields(self, route_results: list[RouteRecord]) -> None:
-        from fcode.dashboard.api import safe_routes
+        from deeporra.dashboard.api import safe_routes
         qs = _FakeQueryService(route_results=route_results)
         results = safe_routes(qs, "GET", None, None, 50)
         assert isinstance(results, list)
@@ -484,7 +484,7 @@ class TestRouteResults:
         assert results[0].route_path == "/api/items"
 
     def test_route_result_paths_are_relative(self, route_results: list[RouteRecord]) -> None:
-        from fcode.dashboard.api import safe_routes
+        from deeporra.dashboard.api import safe_routes
         qs = _FakeQueryService(route_results=route_results)
         results = safe_routes(qs, None, None, None, 50)
         for r in results:
@@ -492,14 +492,14 @@ class TestRouteResults:
             assert not r.source_path.startswith("\\")
 
 
-# â”€â”€ Test 10: Related-code results render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 10: Related-code results render ────────────────────────────────
 
 
 class TestRelatedCode:
     """Verify related-code lookup returns proper results."""
 
     def test_related_results_have_expected_fields(self, related_results: list[RelatedNode]) -> None:
-        from fcode.dashboard.api import safe_related
+        from deeporra.dashboard.api import safe_related
         qs = _FakeQueryService(related_results=related_results)
         results = safe_related(qs, "node-0", "outgoing", ["calls"], 100)
         assert isinstance(results, list)
@@ -509,20 +509,20 @@ class TestRelatedCode:
         assert results[0].direction == "outgoing"
 
     def test_related_depth_defaults_to_one(self) -> None:
-        from fcode.querying import QueryValidationError
+        from deeporra.querying import QueryValidationError
         qs = _FakeQueryService(related_results=[])
         with pytest.raises(QueryValidationError, match="depth > 1"):
             qs.get_related("node-0", depth=2)
 
 
-# â”€â”€ Test 11: Impact results render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 11: Impact results render ──────────────────────────────────────
 
 
 class TestImpactResults:
     """Verify impact analysis returns proper results."""
 
     def test_impact_has_expected_sections(self, impact_result: ImpactAnalysis) -> None:
-        from fcode.dashboard.api import safe_impact
+        from deeporra.dashboard.api import safe_impact
         qs = _FakeQueryService(impact_result=impact_result)
         result = safe_impact(qs, "Calculator.add", 100)
         assert isinstance(result, dict)
@@ -536,54 +536,54 @@ class TestImpactResults:
         assert len(result["warnings"]) == 1
 
 
-# â”€â”€ Test 12: First-order limitation visible â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 12: First-order limitation visible ──────────────────────────────
 
 
 class TestFirstOrderLimitation:
     """Verify the first-order limitation is clearly labeled."""
 
     def test_app_script_contains_first_order_label(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
         assert "FIRST-ORDER IMPACT ONLY" in source
 
     def test_impact_analysis_type_is_first_order(self, impact_result: ImpactAnalysis) -> None:
         assert impact_result.analysis_type == "first_order"
 
 
-# â”€â”€ Test 13: Blank query validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 13: Blank query validation ──────────────────────────────────────
 
 
 class TestBlankQueryValidation:
     """Verify blank queries are rejected."""
 
     def test_blank_search_raises_validation_error(self) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(search_results=[])
         result = safe_search(qs, "", 10, "text")
         assert isinstance(result, str)
         assert "blank" in result.lower() or "error" in result.lower()
 
     def test_blank_symbols_raises_validation_error(self) -> None:
-        from fcode.dashboard.api import safe_symbols
+        from deeporra.dashboard.api import safe_symbols
         qs = _FakeQueryService(symbol_results=[])
         result = safe_symbols(qs, "", 20, False)
         assert isinstance(result, str)
         assert "blank" in result.lower() or "error" in result.lower()
 
     def test_app_checks_blank_queries(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
         assert "not query.strip()" in source or 'Please enter a' in source
 
 
-# â”€â”€ Test 14: Invalid limit validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 14: Invalid limit validation ────────────────────────────────────
 
 
 class TestInvalidLimitValidation:
     """Verify invalid limit values are handled."""
 
     def test_limit_validation_returns_string(self) -> None:
-        from fcode.dashboard.api import safe_search
-        from fcode.querying import QueryValidationError
+        from deeporra.dashboard.api import safe_search
+        from deeporra.querying import QueryValidationError
         qs = _FakeQueryService()
         qs.search_code = lambda query, limit, mode: (_ for _ in ()).throw(
             QueryValidationError("limit must be between 1 and 500")
@@ -593,14 +593,14 @@ class TestInvalidLimitValidation:
         assert "limit" in result.lower()
 
 
-# â”€â”€ Test 15: Repository-relative paths â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 15: Repository-relative paths ──────────────────────────────────
 
 
 class TestRepoRelativePaths:
     """Verify all displayed paths are repository-relative."""
 
     def test_search_paths_are_relative(self, search_results: list[CodeSearchResult]) -> None:
-        from fcode.dashboard.api import safe_search
+        from deeporra.dashboard.api import safe_search
         qs = _FakeQueryService(search_results=search_results)
         results = safe_search(qs, "greet", 10, "text")
         for r in results:
@@ -608,7 +608,7 @@ class TestRepoRelativePaths:
             assert not r.source_path.startswith("\\")
 
     def test_symbol_paths_are_relative(self, symbol_results: list[SymbolRecord]) -> None:
-        from fcode.dashboard.api import safe_symbols
+        from deeporra.dashboard.api import safe_symbols
         qs = _FakeQueryService(symbol_results=symbol_results)
         results = safe_symbols(qs, "Calculator", 20, False)
         for r in results:
@@ -616,32 +616,32 @@ class TestRepoRelativePaths:
             assert not r.source_path.startswith("\\")
 
 
-# â”€â”€ Test 16-19: Safety checks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Test 16-19: Safety checks ────────────────────────────────────────────
 
 
 class TestSafetyChecks:
     """Verify read-only and local safety properties."""
 
     def test_no_source_file_modification(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
         assert "open(" not in source
         assert ".write(" not in source
         assert "shutil" not in source
 
-    def test_no_fcode_creation(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
-        api_source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "api.py").read_text(encoding="utf-8")
-        assert ".fcode" not in source
-        assert ".fcode" not in api_source
+    def test_no_DEEPORRA_creation(self) -> None:
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
+        api_source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "api.py").read_text(encoding="utf-8")
+        assert ".deeporra" not in source
+        assert ".deeporra" not in api_source
 
     def test_no_index_activation(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
         assert "IndexService" not in source
         assert "build_complete_index" not in source
         assert "index_service" not in source.lower()
 
     def test_no_network_access(self) -> None:
-        source = Path(__file__).parents[3].joinpath("fcode", "dashboard", "app.py").read_text(encoding="utf-8")
+        source = Path(__file__).parents[3].joinpath("DeepOrra", "dashboard", "app.py").read_text(encoding="utf-8")
         assert "urllib" not in source
         assert "requests" not in source
         http_keywords = [w for w in source.lower().split() if w.startswith("http")]

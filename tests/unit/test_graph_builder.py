@@ -1,11 +1,11 @@
 """Tests for graph_builder.py."""
 
-from fcode.contracts import (
+from deeporra.contracts import (
     Confidence, FileType, GraphBuildResult, GraphNodeInput, GraphNodeType,
     GraphRelation, HttpMethod, ParsedFile, ParsedImport, ParsedRoute,
     ParsedSymbol, ParseStatus, SymbolType,
 )
-from fcode.graph.graph_builder import build, _infer_tested_name
+from deeporra.graph.graph_builder import build, _infer_tested_name
 
 
 def _pf(path: str) -> ParsedFile:

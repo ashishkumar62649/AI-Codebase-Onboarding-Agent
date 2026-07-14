@@ -9,17 +9,17 @@ import pytest
 
 
 def _invoke(*args: str, timeout: int = 15) -> subprocess.CompletedProcess:
-    """Run python -m fcode <args> and capture stdout, stderr, return code."""
+    """Run python -m deeporra <args> and capture stdout, stderr, return code."""
     return subprocess.run(
-        [sys.executable, "-m", "fcode", *args],
+        [sys.executable, "-m", "deeporra", *args],
         capture_output=True,
         text=True,
         timeout=timeout,
     )
 
 
-def _fcode_on_path() -> bool:
-    return shutil.which("fcode") is not None
+def _DEEPORRA_on_path() -> bool:
+    return shutil.which("deeporra") is not None
 
 
 class TestHelp:
@@ -47,11 +47,11 @@ class TestIndex:
         result = _invoke("index", str(tmp_path / "nonexistent"))
         assert "Index failed." in result.stdout
 
-    def test_index_no_fcode_dir_created(self, tmp_path):
-        fcode_dir = os.path.join(os.getcwd(), ".fcode")
-        existed_before = os.path.isdir(fcode_dir)
+    def test_index_no_DEEPORRA_dir_created(self, tmp_path):
+        DEEPORRA_dir = os.path.join(os.getcwd(), ".deeporra")
+        existed_before = os.path.isdir(DEEPORRA_dir)
         _invoke("index", str(tmp_path / "nonexistent"))
-        assert os.path.isdir(fcode_dir) == existed_before
+        assert os.path.isdir(DEEPORRA_dir) == existed_before
 
 
 class TestStatus:
@@ -134,13 +134,13 @@ class TestSetup:
 
 
 class TestConsoleScript:
-    """Test that `fcode --help` works when the console script is on PATH."""
+    """Test that `DeepOrra --help` works when the console script is on PATH."""
 
-    def test_fcode_command_works(self):
-        if not _fcode_on_path():
-            pytest.skip("fcode not on PATH")
+    def test_DEEPORRA_command_works(self):
+        if not _DEEPORRA_on_path():
+            pytest.skip("DeepOrra not on PATH")
         result = subprocess.run(
-            ["fcode", "--help"],
+            ["DeepOrra", "--help"],
             capture_output=True,
             text=True,
             timeout=15,

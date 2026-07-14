@@ -58,12 +58,12 @@ def test_actual_g01_manifest_uses_strict_semantic_schema():
     assert len(manifest["warnings"]) == 0
     assert len(manifest["errors"]) == 0
 
-@pytest.mark.parametrize("case", ["imports","chunks","graph_nodes","graph_edges","unknown","absolute","traversal","range","symbol","route","chunk","node","edge","source","target","parent","owner","secret","fcode","opaque"], ids=str)
+@pytest.mark.parametrize("case", ["imports","chunks","graph_nodes","graph_edges","unknown","absolute","traversal","range","symbol","route","chunk","node","edge","source","target","parent","owner","secret","DeepOrra","opaque"], ids=str)
 def test_invalid_manifest(case):
     m=copy.deepcopy(valid())
     if case in {"imports","chunks","graph_nodes","graph_edges"}: del m[case]
     elif case=="unknown": m["extra"]=1
-    elif case in {"absolute","traversal","fcode"}: m["scanned_files"]=[{"absolute":"/x","traversal":"../x","fcode":".fcode/x"}[case]]
+    elif case in {"absolute","traversal","DeepOrra"}: m["scanned_files"]=[{"absolute":"/x","traversal":"../x","DeepOrra":".deeporra/x"}[case]]
     elif case=="range": m["symbols"][0]["start_line"]=3
     elif case in {"symbol","chunk","node"}: m[{"symbol":"symbols","chunk":"chunks","node":"graph_nodes"}[case]].append(copy.deepcopy(m[{"symbol":"symbols","chunk":"chunks","node":"graph_nodes"}[case]][0]))
     elif case=="route": m["routes"].append(copy.deepcopy(m["routes"][0]))

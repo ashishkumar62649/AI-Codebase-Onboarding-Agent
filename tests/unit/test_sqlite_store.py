@@ -7,9 +7,9 @@ import uuid as uuid_mod
 
 import pytest
 
-from fcode.storage.sqlite_store import SQLiteStore
-from fcode.storage.migrations.v001_initial import apply as apply_v001
-from fcode.storage.migrations.v002_status_counts import COUNT_COLUMNS
+from deeporra.storage.sqlite_store import SQLiteStore
+from deeporra.storage.migrations.v001_initial import apply as apply_v001
+from deeporra.storage.migrations.v002_status_counts import COUNT_COLUMNS
 
 
 @pytest.fixture

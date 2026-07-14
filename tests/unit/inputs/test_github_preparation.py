@@ -8,19 +8,19 @@ from unittest.mock import ANY, patch
 
 import pytest
 
-from fcode.inputs.errors import (
+from deeporra.inputs.errors import (
     GitCloneError,
     GitUnavailableError,
     UnsupportedRepositoryUrlError,
 )
-from fcode.inputs.github_preparation import (
+from deeporra.inputs.github_preparation import (
     _clone,
     _ensure_git_available,
     _rev_parse_head,
     _run_git,
     prepare_github,
 )
-from fcode.inputs.models import InputKind
+from deeporra.inputs.models import InputKind
 
 
 class FakeCompletedProcess:

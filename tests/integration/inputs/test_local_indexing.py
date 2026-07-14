@@ -4,9 +4,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from fcode.contracts import FCodeConfig, RepoInput
-from fcode.inputs import RepositoryInputService
-from fcode.scanner.file_scanner import scan
+from deeporra.contracts import DeepOrraConfig, RepoInput
+from deeporra.inputs import RepositoryInputService
+from deeporra.scanner.file_scanner import scan
 
 
 def test_local_folder_prepare_then_scan():
@@ -20,7 +20,7 @@ def test_local_folder_prepare_then_scan():
         prepared = service.prepare(str(repo_dir))
 
         repo_input = RepoInput(repo_path=str(prepared.repository_root))
-        config = FCodeConfig(repo_path=str(prepared.repository_root))
+        config = DeepOrraConfig(repo_path=str(prepared.repository_root))
         result = scan(repo_input, config)
 
         assert len(result.files) == 2

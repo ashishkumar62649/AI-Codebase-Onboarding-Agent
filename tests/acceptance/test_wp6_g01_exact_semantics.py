@@ -9,12 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from fcode.chunking.chunker import Chunker
-from fcode.contracts import FCodeConfig, FileType, ParseStatus, ParsedFile, RepoInput, SymbolType
-from fcode.embeddings.encoder import EmbeddingEncoder, build_embedding_inputs
-from fcode.graph.graph_builder import build
-from fcode.parser.python_ast import parse
-from fcode.scanner.file_scanner import scan
+from deeporra.chunking.chunker import Chunker
+from deeporra.contracts import DeepOrraConfig, FileType, ParseStatus, ParsedFile, RepoInput, SymbolType
+from deeporra.embeddings.encoder import EmbeddingEncoder, build_embedding_inputs
+from deeporra.graph.graph_builder import build
+from deeporra.parser.python_ast import parse
+from deeporra.scanner.file_scanner import scan
 from tests.support.wp6_manifest import validate_manifest
 
 
@@ -57,7 +57,7 @@ def _symbol_key(symbol, parsed_file, source_file, route_handlers: set[str]) -> s
 
 
 def _actual_static(root: Path) -> dict[str, object]:
-    config = FCodeConfig(repo_path=str(root))
+    config = DeepOrraConfig(repo_path=str(root))
     scanned = scan(RepoInput(repo_path=str(root)), config)
     source_by_path = {_path(item.file_path): item for item in scanned.files}
     parsed = [
@@ -286,7 +286,7 @@ def _expected() -> dict[str, object]:
 
 
 def _generated_artifacts(root: Path) -> list[str]:
-    artifact_names = {".fcode", "chroma", "__pycache__", ".pytest_cache", "cache", "tmp", "active.json"}
+    artifact_names = {".deeporra", "chroma", "__pycache__", ".pytest_cache", "cache", "tmp", "active.json"}
     artifact_suffixes = {".db", ".sqlite", ".sqlite3", ".lock"}
     found = []
     for item in root.rglob("*"):

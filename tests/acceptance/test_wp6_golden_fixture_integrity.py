@@ -27,7 +27,7 @@ def test_manifests_are_complete_and_fixture_bytes_match():
 
 
 def test_fixture_roots_contain_no_index_artifacts():
-    forbidden = {".fcode", "active.json", "rebuild.lock"}
+    forbidden = {".deeporra", "active.json", "rebuild.lock"}
     for path in (ROOT / "repos").rglob("*"):
         assert path.name not in forbidden
         assert not path.name.startswith("generation-")

@@ -5,15 +5,15 @@ import sys
 import types
 from pathlib import Path
 
-from fcode.chunking import Chunker
-from fcode.contracts import FCodeConfig, IndexPhase, IndexState
-from fcode.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing import IndexService
-from fcode.parser.python_ast import parse
-from fcode.scanner.file_scanner import scan
-from fcode.storage.fts_store import FTSStore
-from fcode.storage.sqlite_store import SQLiteStore
+from deeporra.chunking import Chunker
+from deeporra.contracts import DeepOrraConfig, IndexPhase, IndexState
+from deeporra.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing import IndexService
+from deeporra.parser.python_ast import parse
+from deeporra.scanner.file_scanner import scan
+from deeporra.storage.fts_store import FTSStore
+from deeporra.storage.sqlite_store import SQLiteStore
 
 
 SECRET = "ghp_abcdefghijklmnopqrstuvwxyz1234567890"
@@ -119,7 +119,7 @@ def test_wp5_sqlite_fts_real_pipeline(tmp_path, monkeypatch):
             graph_builder=graph_builder,
             sqlite_store=sqlite_store,
             fts_store=fts_store,
-        ).build_through_sqlite_fts(FCodeConfig(repo_path=str(repo)))
+        ).build_through_sqlite_fts(DeepOrraConfig(repo_path=str(repo)))
 
         assert result.state_history == (
             IndexState.PENDING,
@@ -194,7 +194,7 @@ def test_wp5_sqlite_fts_real_pipeline(tmp_path, monkeypatch):
         status = sqlite_store.read_index_status(repo_id)
         assert status["status"] == "storing"
         assert status["total_vectors"] == 0
-        assert not (repo / ".fcode" / "chroma").exists()
+        assert not (repo / ".deeporra" / "chroma").exists()
         print("STEP4_EVIDENCE=", {
             "in_memory": {
                 "files": len(result.scan_result.files),

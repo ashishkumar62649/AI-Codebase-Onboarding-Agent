@@ -7,12 +7,12 @@ from dataclasses import fields
 
 from typer.testing import CliRunner
 
-from fcode.cli.main import app
-from fcode.embeddings import EXPECTED_DIMENSION
-from fcode.storage.chroma_store import ChromaStore
-from fcode.storage.sqlite_store import SQLiteStore
-from fcode.cli.dependencies import create_index_service
-from fcode.contracts import FCodeConfig
+from deeporra.cli.main import app
+from deeporra.embeddings import EXPECTED_DIMENSION
+from deeporra.storage.chroma_store import ChromaStore
+from deeporra.storage.sqlite_store import SQLiteStore
+from deeporra.cli.dependencies import create_index_service
+from deeporra.contracts import DeepOrraConfig
 
 
 class _FakeSentenceTransformer:
@@ -46,7 +46,7 @@ def test_cli_activates_full_index_and_active_status(tmp_path, monkeypatch):
 
     before = runner.invoke(app, ["status", str(repo)])
     assert before.exit_code == 0 and "No active index." in before.output
-    assert not (repo / ".fcode").exists()
+    assert not (repo / ".deeporra").exists()
 
     first = runner.invoke(app, ["index", str(repo)])
     assert first.exit_code == 0 and "Index complete." in first.output
@@ -74,7 +74,7 @@ def test_cli_activates_full_index_and_active_status(tmp_path, monkeypatch):
 def test_status_rejects_invalid_active_pointer_without_leaking_workspace_details(tmp_path):
     repo = tmp_path / "repo with spaces"
     repo.mkdir()
-    workspace = repo / ".fcode"
+    workspace = repo / ".deeporra"
     workspace.mkdir()
     runner = CliRunner()
     for payload in ("not json", "{}", json.dumps({"generation": "../escape"}), json.dumps({"generation": "generation-missing"})):
@@ -95,7 +95,7 @@ def test_status_resolves_active_pointer_once_for_one_snapshot(tmp_path, monkeypa
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake)
     runner = CliRunner()
     assert runner.invoke(app, ["index", str(repo)]).exit_code == 0
-    from fcode.indexing.full_rebuild import FullRebuildCoordinator
+    from deeporra.indexing.full_rebuild import FullRebuildCoordinator
     original = FullRebuildCoordinator.active_generation
     calls = {"count": 0}
     def counted(self):
@@ -116,7 +116,7 @@ def test_active_status_counts_match_completed_run_and_cli(tmp_path, monkeypatch)
     fake = types.ModuleType("sentence_transformers")
     fake.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake)
-    config = FCodeConfig(repo_path=str(repo))
+    config = DeepOrraConfig(repo_path=str(repo))
     run_counts = create_index_service(config).run_index(config).counts
     service = create_index_service(config, for_status=True)
     assert service.get_status().counts == run_counts
@@ -130,8 +130,8 @@ def test_active_status_counts_match_completed_run_and_cli(tmp_path, monkeypatch)
     assert run_counts.parsed < run_counts.scanned
     assert run_counts.parse_errors == 1
     assert run_counts.embedding_skipped >= 1
-    generation = json.loads((repo / ".fcode" / "active.json").read_text(encoding="utf-8"))["generation"]
-    store = SQLiteStore(str(repo / ".fcode" / "generations" / generation / "index.db"))
+    generation = json.loads((repo / ".deeporra" / "active.json").read_text(encoding="utf-8"))["generation"]
+    store = SQLiteStore(str(repo / ".deeporra" / "generations" / generation / "index.db"))
     store.connect()
     try:
         statuses = {row["path"]: row["parse_status"] for row in store.conn.execute("SELECT path, parse_status FROM files")}

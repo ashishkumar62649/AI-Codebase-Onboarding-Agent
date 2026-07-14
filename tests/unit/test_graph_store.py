@@ -7,8 +7,8 @@ import uuid as uuid_mod
 
 import pytest
 
-from fcode.storage.graph_store import GraphStore, _json_dumps
-from fcode.storage.sqlite_store import SQLiteStore
+from deeporra.storage.graph_store import GraphStore, _json_dumps
+from deeporra.storage.sqlite_store import SQLiteStore
 
 
 @pytest.fixture
@@ -187,7 +187,7 @@ class TestGraphStoreProtocol:
 
     def test_protocol_conformance(self, db):
         import inspect
-        from fcode.contracts.interfaces import GraphStoreProtocol
+        from deeporra.contracts.interfaces import GraphStoreProtocol
         sig_store = inspect.signature(GraphStoreProtocol.store_graph)
         sig_reset = inspect.signature(GraphStoreProtocol.reset)
         self_sig_store = inspect.signature(GraphStore.store_graph)

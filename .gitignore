@@ -11,9 +11,9 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
-# F Code runtime data
-fcode_data/
-.fcode/
+# DeepOrra runtime data
+deeporra_data/
+.deeporra/
 
 # IDE
 .idea/

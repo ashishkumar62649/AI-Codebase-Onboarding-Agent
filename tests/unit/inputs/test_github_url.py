@@ -2,10 +2,10 @@
 
 import pytest
 
-from fcode.inputs.errors import (
+from deeporra.inputs.errors import (
     UnsupportedRepositoryUrlError,
 )
-from fcode.inputs.source_classifier import (
+from deeporra.inputs.source_classifier import (
     InputKind,
     classify,
     normalize_github_url,

@@ -7,7 +7,7 @@ import uuid as uuid_mod
 
 import pytest
 
-from fcode.contracts.enums import (
+from deeporra.contracts.enums import (
     ChunkType,
     Confidence,
     FileType,
@@ -18,7 +18,7 @@ from fcode.contracts.enums import (
     SearchMode,
     SymbolType,
 )
-from fcode.storage.migrations.v001_initial import apply as apply_migration
+from deeporra.storage.migrations.v001_initial import apply as apply_migration
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

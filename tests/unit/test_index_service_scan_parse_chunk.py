@@ -7,12 +7,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fcode.contracts import (
+from deeporra.contracts import (
     ChunkType,
     CodeChunk,
     DiagnosticSeverity,
     ErrorCode,
-    FCodeConfig,
+    DeepOrraConfig,
     IndexPhase,
     IndexState,
     ParseStatus,
@@ -23,8 +23,8 @@ from fcode.contracts import (
     ScannedFile,
     SymbolType,
 )
-from fcode.indexing.index_service import IndexService
-from fcode.contracts.enums import HttpMethod, FileType
+from deeporra.indexing.index_service import IndexService
+from deeporra.contracts.enums import HttpMethod, FileType
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ from fcode.contracts.enums import HttpMethod, FileType
 
 @pytest.fixture
 def valid_config():
-    return FCodeConfig(repo_path=".", max_files=10000, max_size_bytes=52428800)
+    return DeepOrraConfig(repo_path=".", max_files=10000, max_size_bytes=52428800)
 
 
 @pytest.fixture
@@ -111,7 +111,7 @@ def test_process_control_exceptions_propagate_from_step2(stage, control):
     {"scanner": scanner.scan, "parser": parser.parse, "chunker": chunker.chunk}[stage].side_effect = control
 
     with pytest.raises(type(control)) as raised:
-        IndexService(scanner, parser, chunker).build_through_chunking(FCodeConfig(repo_path="."))
+        IndexService(scanner, parser, chunker).build_through_chunking(DeepOrraConfig(repo_path="."))
 
     assert raised.value is control
 
@@ -121,53 +121,53 @@ def test_process_control_exceptions_propagate_from_step2(stage, control):
 
 class TestValidateConfig:
     def test_missing_repo_path(self):
-        config = FCodeConfig(repo_path="")
+        config = DeepOrraConfig(repo_path="")
         d, msg = IndexService._validate_config(config)
         assert d.code == ErrorCode.INVALID_REPOSITORY_PATH.value
         assert not d.recoverable
 
     def test_nonexistent_repo_path(self):
-        config = FCodeConfig(repo_path="/nonexistent/path")
+        config = DeepOrraConfig(repo_path="/nonexistent/path")
         d, msg = IndexService._validate_config(config)
         assert d.code == ErrorCode.INVALID_REPOSITORY_PATH.value
 
     def test_repo_path_is_file_not_dir(self, temp_repo):
         fp = Path(temp_repo, "main.py")
-        config = FCodeConfig(repo_path=str(fp))
+        config = DeepOrraConfig(repo_path=str(fp))
         d, msg = IndexService._validate_config(config)
         assert d.code == ErrorCode.INVALID_REPOSITORY_PATH.value
 
     def test_valid_repo_path_returns_none(self, temp_repo):
-        config = FCodeConfig(repo_path=temp_repo)
+        config = DeepOrraConfig(repo_path=temp_repo)
         assert IndexService._validate_config(config) is None
 
     def test_bool_max_files(self):
-        config = FCodeConfig(repo_path=".", max_files=True)
+        config = DeepOrraConfig(repo_path=".", max_files=True)
         d, msg = IndexService._validate_config(config)
         assert d.code == "config_invalid"
 
     def test_non_int_max_files(self):
-        config = FCodeConfig(repo_path=".", max_files="ten")
+        config = DeepOrraConfig(repo_path=".", max_files="ten")
         d, msg = IndexService._validate_config(config)
         assert d.code == "config_invalid"
 
     def test_zero_max_files(self):
-        config = FCodeConfig(repo_path=".", max_files=0)
+        config = DeepOrraConfig(repo_path=".", max_files=0)
         d, msg = IndexService._validate_config(config)
         assert d.code == "config_invalid"
 
     def test_negative_max_files(self):
-        config = FCodeConfig(repo_path=".", max_files=-1)
+        config = DeepOrraConfig(repo_path=".", max_files=-1)
         d, msg = IndexService._validate_config(config)
         assert d.code == "config_invalid"
 
     def test_bool_max_size_bytes(self):
-        config = FCodeConfig(repo_path=".", max_size_bytes=True)
+        config = DeepOrraConfig(repo_path=".", max_size_bytes=True)
         d, msg = IndexService._validate_config(config)
         assert d.code == "config_invalid"
 
     def test_zero_max_size_bytes(self):
-        config = FCodeConfig(repo_path=".", max_size_bytes=0)
+        config = DeepOrraConfig(repo_path=".", max_size_bytes=0)
         d, msg = IndexService._validate_config(config)
         assert d.code == "config_invalid"
 
@@ -241,34 +241,34 @@ class TestValidateScanResult:
         assert d.code == ErrorCode.SCAN_FAILED.value
 
     def test_over_max_files(self):
-        config = FCodeConfig(repo_path=".", max_files=1)
+        config = DeepOrraConfig(repo_path=".", max_files=1)
         sr = ScanResult(files=[_make_scanned(), _make_scanned(pid="f2", path="b.py")],
                         eligible_file_count=2, total_count=2, eligible_total_bytes=100)
         d, msg = IndexService._validate_scan_result(sr, config)
         assert d.code == ErrorCode.REPOSITORY_LIMIT_EXCEEDED.value
 
     def test_over_max_bytes(self):
-        config = FCodeConfig(repo_path=".", max_size_bytes=50)
+        config = DeepOrraConfig(repo_path=".", max_size_bytes=50)
         sr = ScanResult(files=[_make_scanned()],
                         eligible_file_count=1, total_count=1, eligible_total_bytes=100)
         d, msg = IndexService._validate_scan_result(sr, config)
         assert d.code == ErrorCode.REPOSITORY_LIMIT_EXCEEDED.value
 
     def test_skipped_limit_exceeded(self):
-        from fcode.contracts import SkippedFileDiagnostic
+        from deeporra.contracts import SkippedFileDiagnostic
         sr = ScanResult(files=[_make_scanned()], skipped=[SkippedFileDiagnostic(file_path="x.py", reason="repository_limit_exceeded")],
                         eligible_file_count=1, total_count=1, eligible_total_bytes=100)
-        d, msg = IndexService._validate_scan_result(sr, FCodeConfig())
+        d, msg = IndexService._validate_scan_result(sr, DeepOrraConfig())
         assert d.code == ErrorCode.REPOSITORY_LIMIT_EXCEEDED.value
 
     def test_valid_scan_result(self):
         sr = ScanResult(files=[_make_scanned()], eligible_file_count=1, total_count=1, eligible_total_bytes=100)
-        assert IndexService._validate_scan_result(sr, FCodeConfig()) is None
+        assert IndexService._validate_scan_result(sr, DeepOrraConfig()) is None
 
     def test_duplicate_paths_different(self):
         sr = ScanResult(files=[_make_scanned(pid="f1", path="a.py"), _make_scanned(pid="f2", path="b.py")],
                         eligible_file_count=2, total_count=2, eligible_total_bytes=100)
-        assert IndexService._validate_scan_result(sr, FCodeConfig()) is None
+        assert IndexService._validate_scan_result(sr, DeepOrraConfig()) is None
 
 
 # ── convert_scanner_warnings ─────────────────────────────────────────────────
@@ -501,7 +501,7 @@ class TestBuildThroughChunkingFailures:
 
     def test_config_validation_fails(self):
         svc = IndexService(scanner=MagicMock(), parser=MagicMock(), chunker=MagicMock())
-        config = FCodeConfig(repo_path="")
+        config = DeepOrraConfig(repo_path="")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
         assert not result.persistent_replacement_started
@@ -512,7 +512,7 @@ class TestBuildThroughChunkingFailures:
         scanner = MagicMock()
         scanner.scan.side_effect = RuntimeError("boom")
         svc = IndexService(scanner=scanner, parser=MagicMock(), chunker=MagicMock())
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
         assert not result.persistent_replacement_started
@@ -521,7 +521,7 @@ class TestBuildThroughChunkingFailures:
         scanner = MagicMock()
         scanner.scan.return_value = "not a scan result"
         svc = IndexService(scanner=scanner, parser=MagicMock(), chunker=MagicMock())
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
         assert not result.persistent_replacement_started
@@ -533,7 +533,7 @@ class TestBuildThroughChunkingFailures:
             eligible_file_count=2, total_count=2, eligible_total_bytes=100,
         )
         svc = IndexService(scanner=scanner, parser=MagicMock(), chunker=MagicMock())
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
 
@@ -546,7 +546,7 @@ class TestBuildThroughChunkingFailures:
         parser = MagicMock()
         parser.parse.side_effect = ValueError("parse crash")
         svc = IndexService(scanner=scanner, parser=parser, chunker=MagicMock())
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
         assert not result.persistent_replacement_started
@@ -560,7 +560,7 @@ class TestBuildThroughChunkingFailures:
         parser = MagicMock()
         parser.parse.return_value = "not a parsed file"
         svc = IndexService(scanner=scanner, parser=parser, chunker=MagicMock())
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
 
@@ -573,7 +573,7 @@ class TestBuildThroughChunkingFailures:
         parser = MagicMock()
         parser.parse.return_value = ParsedFile(file_id="wrong", file_path="mod.py", status=ParseStatus.PARSED)
         svc = IndexService(scanner=scanner, parser=parser, chunker=MagicMock())
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
 
@@ -588,7 +588,7 @@ class TestBuildThroughChunkingFailures:
         chunker = MagicMock()
         chunker.chunk.side_effect = RuntimeError("chunk crash")
         svc = IndexService(scanner=scanner, parser=parser, chunker=chunker)
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
         assert not result.persistent_replacement_started
@@ -604,7 +604,7 @@ class TestBuildThroughChunkingFailures:
         chunker = MagicMock()
         chunker.chunk.return_value = "not a list"
         svc = IndexService(scanner=scanner, parser=parser, chunker=chunker)
-        config = FCodeConfig(repo_path=".")
+        config = DeepOrraConfig(repo_path=".")
         result = svc.build_through_chunking(config)
         assert result.run_result.state == IndexState.ERROR
 
@@ -638,7 +638,7 @@ class TestBuildThroughChunkingHappyPath:
         chunker = MagicMock()
         chunker.chunk.return_value = [chunk]
 
-        config = FCodeConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
+        config = DeepOrraConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
         svc = IndexService(scanner=scanner, parser=parser, chunker=chunker)
         result = svc.build_through_chunking(config)
 
@@ -670,7 +670,7 @@ class TestBuildThroughChunkingHappyPath:
         chunker = MagicMock()
         chunker.chunk.return_value = []
 
-        config = FCodeConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
+        config = DeepOrraConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
         svc = IndexService(scanner=scanner, parser=parser, chunker=chunker)
         result = svc.build_through_chunking(config)
 
@@ -695,7 +695,7 @@ class TestBuildThroughChunkingHappyPath:
         chunker = MagicMock()
         chunker.chunk.return_value = []
 
-        config = FCodeConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
+        config = DeepOrraConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
         svc = IndexService(scanner=scanner, parser=parser, chunker=chunker)
         result = svc.build_through_chunking(config)
 
@@ -722,7 +722,7 @@ class TestBuildThroughChunkingHappyPath:
         chunker = MagicMock()
         chunker.chunk.return_value = [chunk]
 
-        config = FCodeConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
+        config = DeepOrraConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
         svc = IndexService(scanner=scanner, parser=parser, chunker=chunker)
         result = svc.build_through_chunking(config)
 

@@ -22,23 +22,23 @@ from typing import Sequence
 
 import pytest
 
-from fcode.contracts import (
+from deeporra.contracts import (
     ChunkType,
     EmbeddingBatchResult,
     EmbeddingEncoderProtocol,
     EmbeddingInput,
-    FCodeConfig,
+    DeepOrraConfig,
     GraphBuildResult,
     IndexPhase,
     IndexState,
     ParseStatus,
 )
-from fcode.chunking import Chunker
-from fcode.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing.index_service import IndexService
-from fcode.parser.python_ast import parse as parse_file
-from fcode.scanner.file_scanner import scan as scan_repo
+from deeporra.chunking import Chunker
+from deeporra.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing.index_service import IndexService
+from deeporra.parser.python_ast import parse as parse_file
+from deeporra.scanner.file_scanner import scan as scan_repo
 
 
 class _Scanner:
@@ -240,7 +240,7 @@ def test_wp5_step3_smoke(temp_repo, fake_sentence_transformers):
         graph_builder=_GraphBuilder(),
     )
 
-    config = FCodeConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
+    config = DeepOrraConfig(repo_path=temp_repo, max_files=10000, max_size_bytes=52428800)
 
     # ── Pre-graph parser evidence (must succeed before graph builder sees Pf)
     scan = scan_repo(

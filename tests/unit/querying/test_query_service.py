@@ -7,15 +7,15 @@ from pathlib import Path
 
 import pytest
 
-from fcode.chunking.chunker import Chunker
-from fcode.contracts import FCodeConfig, IndexState
-from fcode.embeddings.encoder import EXPECTED_DIMENSION, EmbeddingEncoder
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing import IndexService
-from fcode.indexing.full_rebuild import FullRebuildCoordinator
-from fcode.parser.python_ast import parse
-from fcode.querying import QueryService, RepositoryNotIndexedError, QueryValidationError
-from fcode.scanner.file_scanner import scan
+from deeporra.chunking.chunker import Chunker
+from deeporra.contracts import DeepOrraConfig, IndexState
+from deeporra.embeddings.encoder import EXPECTED_DIMENSION, EmbeddingEncoder
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing import IndexService
+from deeporra.indexing.full_rebuild import FullRebuildCoordinator
+from deeporra.parser.python_ast import parse
+from deeporra.querying import QueryService, RepositoryNotIndexedError, QueryValidationError
+from deeporra.scanner.file_scanner import scan
 
 
 class _FakeSentenceTransformer:
@@ -86,15 +86,15 @@ def _index_repo(repo: Path, monkeypatch) -> str:
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    result = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert result.run_result.state == IndexState.COMPLETE
     return result
 
 
-# ── 1. Missing .fcode index ──────────────────────────────────────────────
+# ── 1. Missing .deeporra index ──────────────────────────────────────────────
 
 
-def test_no_fcode_dir_raises_error(tmp_path):
+def test_no_DEEPORRA_dir_raises_error(tmp_path):
     repo = tmp_path / "nonexistent"
     repo.mkdir()
     with pytest.raises(RepositoryNotIndexedError):
@@ -107,9 +107,9 @@ def test_no_fcode_dir_raises_error(tmp_path):
 def test_no_active_generation_raises_error(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
-    fcode = repo / ".fcode"
-    fcode.mkdir()
-    (fcode / "index.db").write_text("", encoding="utf-8")
+    deeporra_dir = repo / ".deeporra"
+    deeporra_dir.mkdir()
+    (deeporra_dir / "index.db").write_text("", encoding="utf-8")
     with pytest.raises(RepositoryNotIndexedError):
         QueryService(str(repo)).get_repository_summary()
 
@@ -169,8 +169,8 @@ def test_semantic_search_returns_real_results(tmp_path, monkeypatch):
 
 
 def test_semantic_mode_raises_when_encoder_unavailable(tmp_path, monkeypatch):
-    from fcode.contracts.errors import ErrorCode
-    from fcode.embeddings.encoder import EmbeddingEncoderError
+    from deeporra.contracts.errors import ErrorCode
+    from deeporra.embeddings.encoder import EmbeddingEncoderError
 
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -186,8 +186,8 @@ def test_semantic_mode_raises_when_encoder_unavailable(tmp_path, monkeypatch):
 
 
 def test_hybrid_mode_degrades_gracefully_when_encoder_unavailable(tmp_path, monkeypatch):
-    from fcode.contracts.errors import ErrorCode
-    from fcode.embeddings.encoder import EmbeddingEncoderError
+    from deeporra.contracts.errors import ErrorCode
+    from deeporra.embeddings.encoder import EmbeddingEncoderError
 
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -369,8 +369,8 @@ def test_query_does_not_create_index(tmp_path, monkeypatch):
     _write_small_repo(repo)
     _index_repo(repo, monkeypatch)
 
-    fcode_dir = repo / ".fcode"
-    before = {str(p.relative_to(fcode_dir)): p.stat().st_size for p in fcode_dir.rglob("*") if p.is_file()}
+    DEEPORRA_dir = repo / ".deeporra"
+    before = {str(p.relative_to(DEEPORRA_dir)): p.stat().st_size for p in DEEPORRA_dir.rglob("*") if p.is_file()}
 
     qs = QueryService(str(repo))
     qs.get_repository_summary()
@@ -378,7 +378,7 @@ def test_query_does_not_create_index(tmp_path, monkeypatch):
     qs.find_symbols("Calculator")
     qs.find_routes()
 
-    after = {str(p.relative_to(fcode_dir)): p.stat().st_size for p in fcode_dir.rglob("*") if p.is_file()}
+    after = {str(p.relative_to(DEEPORRA_dir)): p.stat().st_size for p in DEEPORRA_dir.rglob("*") if p.is_file()}
     assert before == after
 
 
@@ -496,8 +496,8 @@ def test_malformed_route_metadata_does_not_crash(tmp_path, monkeypatch):
     _write_small_repo(repo)
     _index_repo(repo, monkeypatch)
 
-    from fcode.storage import SQLiteStore
-    from fcode.indexing.full_rebuild import FullRebuildCoordinator
+    from deeporra.storage import SQLiteStore
+    from deeporra.indexing.full_rebuild import FullRebuildCoordinator
 
     coord = FullRebuildCoordinator(str(repo))
     gen = coord.active_generation()

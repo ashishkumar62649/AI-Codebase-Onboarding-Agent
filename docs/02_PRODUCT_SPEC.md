@@ -1,12 +1,12 @@
-# 02_PRODUCT_SPEC.md — F Code Product Specification
+# 02_PRODUCT_SPEC.md — DeepOrra Product Specification
 
 ## 1. Product Overview
 
-F Code is a local repository intelligence tool that helps AI coding agents avoid writing code that already exists. It indexes a repository, extracts code relationships, and exposes search and planning tools through MCP so agents can check for existing implementations before writing new code.
+DeepOrra is a local repository intelligence tool that helps AI coding agents avoid writing code that already exists. It indexes a repository, extracts code relationships, and exposes search and planning tools through MCP so agents can check for existing implementations before writing new code.
 
 ## 2. Product Thesis
 
-"F Code helps AI coding agents avoid writing code that already exists by giving them local, evidence-backed repository intelligence before implementation."
+"DeepOrra helps AI coding agents avoid writing code that already exists by giving them local, evidence-backed repository intelligence before implementation."
 
 ## 3. Target Users
 
@@ -42,7 +42,7 @@ When a coding agent works on an unfamiliar repository, it does not know what alr
 
 ## 7. Main Promise
 
-F Code gives coding agents repository intelligence before they write code, so they:
+DeepOrra gives coding agents repository intelligence before they write code, so they:
 - Find and reuse existing implementations
 - Recommend modifications to existing files over new file creation
 - Understand impact before suggesting changes
@@ -51,25 +51,25 @@ F Code gives coding agents repository intelligence before they write code, so th
 ## 8. Current Build User Journey
 
 ```
-1. Developer installs F Code: pip install fcode
-2. Developer indexes a repository: fcode index /path/to/repo
-3. F Code scans, parses, embeds, builds graph — stores in .fcode/
-4. Developer opens dashboard: fcode dashboard
+1. Developer installs DeepOrra: pip install deeporra
+2. Developer indexes a repository: deeporra index /path/to/repo
+3. DeepOrra scans, parses, embeds, builds graph — stores in .deeporra/
+4. Developer opens dashboard: deeporra dashboard
 5. Developer inspects repository wiki, tests queries
-6. Developer connects MCP server to coding agent: fcode mcp --repo /path/to/repo
+6. Developer connects MCP server to coding agent: deeporra mcp --repo /path/to/repo
 7. Coding agent uses MCP tools to check before writing code
 8. Agent calls check_existing_implementation("email validation")
-9. F Code returns: "validate_email already exists in utils/validators.py:42"
+9. DeepOrra returns: "validate_email already exists in utils/validators.py:42"
 10. Agent reuses existing code instead of creating duplicate
 ```
 
 ## 9. Human Dashboard Journey
 
 ```
-1. User runs: fcode dashboard
+1. User runs: deeporra dashboard
 2. Streamlit opens on localhost:8501
 3. User enters GitHub URL or uploads ZIP
-4. F Code indexes the repository
+4. DeepOrra indexes the repository
 5. User sees repository wiki: structure, symbols, summary
 6. User asks: "Where is authentication handled?"
 7. Dashboard shows: relevant files, functions, evidence
@@ -80,16 +80,16 @@ F Code gives coding agents repository intelligence before they write code, so th
 ## 10. Coding Agent MCP Journey
 
 ```
-1. Agent starts with: fcode mcp --repo /path/to/repo
-2. F Code starts MCP stdio server
+1. Agent starts with: deeporra mcp --repo /path/to/repo
+2. DeepOrra starts MCP stdio server
 3. Agent receives tool list from MCP
 4. Agent receives coding task: "Add email validation"
 5. Agent calls: check_existing_implementation({"feature": "email validation"})
-6. F Code returns: existing implementation found in utils/validators.py
+6. DeepOrra returns: existing implementation found in utils/validators.py
 7. Agent calls: find_symbol({"name": "validate_email"})
-8. F Code returns: function signature, file, line range, usage examples
+8. DeepOrra returns: function signature, file, line range, usage examples
 9. Agent calls: plan_minimal_change({"target": "extend validate_email"})
-10. F Code returns: minimal change plan with evidence
+10. DeepOrra returns: minimal change plan with evidence
 11. Agent implements change using existing code
 ```
 
@@ -123,22 +123,22 @@ F Code gives coding agents repository intelligence before they write code, so th
 
 ## 13. Differentiation
 
-### F Code vs Graphify
+### DeepOrra vs Graphify
 
-| Aspect | F Code | Graphify |
+| Aspect | DeepOrra | Graphify |
 |--------|--------|----------|
 | Primary purpose | Help coding agents avoid duplicate code | Build knowledge graphs from code |
 | Interface | MCP tools for agents + dashboard for humans | CLI + assistant skill |
 | Storage | SQLite + Chroma | NetworkX graph + files |
 | Retrieval | Hybrid vector + keyword + graph | Graph traversal only |
 | Output | Evidence-backed answers, plans, impact | Interactive graph, report |
-| Runtime dependency | No | No (for F Code) |
+| Runtime dependency | No | No (for DeepOrra) |
 
-**Honest claim:** F Code focuses on local pre-write reuse checks for coding agents. Graphify focuses on building visual knowledge graphs. They solve different problems.
+**Honest claim:** DeepOrra focuses on local pre-write reuse checks for coding agents. Graphify focuses on building visual knowledge graphs. They solve different problems.
 
-### F Code vs Ponytail
+### DeepOrra vs Ponytail
 
-| Aspect | F Code | Ponytail |
+| Aspect | DeepOrra | Ponytail |
 |--------|--------|----------|
 | Primary purpose | Repository intelligence for agents | Minimal-change discipline for agents |
 | Category | RAG application | Agent behavior plugin |
@@ -146,27 +146,27 @@ F Code gives coding agents repository intelligence before they write code, so th
 | Storage | SQLite + Chroma | None |
 | Interface | MCP tools | Prompt rules + skills |
 
-**Honest claim:** F Code gives agents knowledge about a repository. Ponytail gives agents discipline about writing code. F Code embeds Ponytail-style rules into its planning prompts.
+**Honest claim:** DeepOrra gives agents knowledge about a repository. Ponytail gives agents discipline about writing code. DeepOrra embeds Ponytail-style rules into its planning prompts.
 
-### F Code vs Code Wiki Tools
+### DeepOrra vs Code Wiki Tools
 
-| Aspect | F Code | Code Wiki Tools |
+| Aspect | DeepOrra | Code Wiki Tools |
 |--------|--------|----------------|
 | Primary purpose | Agent intelligence layer | Generated documentation |
 | Focus | Pre-write reuse checks | Post-write documentation |
 | Interface | MCP tools for agents | Generated markdown/HTML |
 | Retrieval | Hybrid search + graph | Document search |
 
-**Honest claim:** F Code is for agents that are about to write code. Code wiki tools are for humans who want to read documentation. Different audiences, different timing.
+**Honest claim:** DeepOrra is for agents that are about to write code. Code wiki tools are for humans who want to read documentation. Different audiences, different timing.
 
 ## 14. Graphify Comparison
 
-F Code does NOT compete with Graphify. F Code borrows design ideas from Graphify:
+DeepOrra does NOT compete with Graphify. DeepOrra borrows design ideas from Graphify:
 - Node/edge schema: `{id, label, source_file, source_location}` + `{source, target, relation, confidence}`
 - Confidence labels: EXTRACTED / INFERRED / AMBIGUOUS
 - File detection and filtering patterns
 
-F Code does NOT:
+DeepOrra does NOT:
 - Use Graphify as a dependency
 - Build interactive graph visualizations
 - Export to Obsidian, Neo4j, or FalkorDB
@@ -174,20 +174,20 @@ F Code does NOT:
 
 ## 15. Ponytail Comparison
 
-F Code does NOT compete with Ponytail. F Code embeds Ponytail-style rules into its agent prompts:
+DeepOrra does NOT compete with Ponytail. DeepOrra embeds Ponytail-style rules into its agent prompts:
 - 7-rung minimal solution ladder
 - "No abstractions not requested"
 - "Deletion over addition"
 - Root-cause debugging approach
 
-F Code does NOT:
+DeepOrra does NOT:
 - Install Ponytail as a dependency
 - Replace Ponytail's agent behavior plugin
 - Modify how external coding agents behave (only provides intelligence tools)
 
 ## 16. Code Wiki-Style Comparison
 
-F Code is NOT a code wiki generator. F Code:
+DeepOrra is NOT a code wiki generator. DeepOrra:
 - Indexes code for agent consumption, not human documentation
 - Provides MCP tools for real-time queries, not static reports
 - Focuses on duplicate prevention, not documentation generation
@@ -210,19 +210,19 @@ F Code is NOT a code wiki generator. F Code:
 ## 18. Failure Criteria
 
 The project fails if:
-- F Code cannot find existing reusable code in golden test scenarios
-- F Code suggests creating new files when existing files should be extended
-- F Code's MCP tools are too slow to be useful (>10s per query)
-- F Code leaks repository code to external services
-- F Code's index is unreliable (frequent missing/incorrect results)
-- F Code cannot parse standard Python projects
+- DeepOrra cannot find existing reusable code in golden test scenarios
+- DeepOrra suggests creating new files when existing files should be extended
+- DeepOrra's MCP tools are too slow to be useful (>10s per query)
+- DeepOrra leaks repository code to external services
+- DeepOrra's index is unreliable (frequent missing/incorrect results)
+- DeepOrra cannot parse standard Python projects
 
 ## 19. Current Build Acceptance Criteria
 
 The current build is acceptable if:
-1. `fcode index <repo>` completes without errors for Python repos up to 10,000 files
-2. `fcode mcp --repo <repo>` starts and responds to all 8 MCP tools
-3. `fcode dashboard` shows repository wiki and tool preview
+1. `deeporra index <repo>` completes without errors for Python repos up to 10,000 files
+2. `deeporra mcp --repo <repo>` starts and responds to all 8 MCP tools
+3. `deeporra dashboard` shows repository wiki and tool preview
 4. `check_existing_implementation` finds existing functions with 80%+ accuracy
 5. `find_symbol` returns correct file, line range, and signature
 6. `search_code` returns relevant results for natural language queries
@@ -233,6 +233,6 @@ The current build is acceptable if:
 ## 20. Open Questions
 
 1. Should the dashboard show graph visualization (network diagram) in the current build? (Recommended: no, text-based wiki is sufficient.)
-2. Should F Code support monorepos in the current build? (Recommended: single repository per index.)
+2. Should DeepOrra support monorepos in the current build? (Recommended: single repository per index.)
 3. Should the MCP server support multiple repositories simultaneously? (Recommended: one repo per MCP server instance in current build.)
 4. Should generated reports be cached or regenerated on each query? (Recommended: cached, invalidated on reindex.)

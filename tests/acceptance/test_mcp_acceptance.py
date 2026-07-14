@@ -13,13 +13,13 @@ from pathlib import Path
 import anyio
 import pytest
 
-from fcode.chunking import Chunker
-from fcode.contracts import FCodeConfig, IndexState
-from fcode.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing import IndexService
-from fcode.parser.python_ast import parse as parse_file
-from fcode.scanner.file_scanner import scan as scan_repo
+from deeporra.chunking import Chunker
+from deeporra.contracts import DeepOrraConfig, IndexState
+from deeporra.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing import IndexService
+from deeporra.parser.python_ast import parse as parse_file
+from deeporra.scanner.file_scanner import scan as scan_repo
 
 
 class _FakeSentenceTransformer:
@@ -100,7 +100,7 @@ def indexed_repo(tmp_path, monkeypatch):
         _Scanner(), _Parser(), Chunker(),
         encoder=EmbeddingEncoder(), graph_builder=_GraphBuilder(),
     )
-    result = svc.build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = svc.build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert result.run_result.state == IndexState.COMPLETE
     return str(repo)
 
@@ -110,7 +110,7 @@ async def test_mcp_acceptance_all_tools(indexed_repo):
     """End-to-end acceptance test: all seven tools respond correctly via protocol."""
     from mcp.types import JSONRPCMessage
     from mcp.shared.session import SessionMessage
-    from fcode.mcp_server import create_mcp_server
+    from deeporra.mcp_server import create_mcp_server
 
     fastmcp = create_mcp_server()
     server = fastmcp._mcp_server

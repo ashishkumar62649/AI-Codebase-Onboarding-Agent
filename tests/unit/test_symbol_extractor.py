@@ -1,8 +1,8 @@
 """Tests for symbol_extractor.py."""
 
 import ast
-from fcode.parser.symbol_extractor import extract_symbols
-from fcode.contracts import SymbolType
+from deeporra.parser.symbol_extractor import extract_symbols
+from deeporra.contracts import SymbolType
 
 
 def test_function():

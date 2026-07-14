@@ -1,8 +1,8 @@
-# 09_AGENT_TASKS.md — F Code First-Slice Work Packages
+# 09_AGENT_TASKS.md — DeepOrra First-Slice Work Packages
 
 ## 1. Purpose
 
-This document defines the first-slice work packages for the F Code project. It divides implementation into discrete, sequentially executable packages that prevent agents from overwriting each other, editing unrelated files, or inventing contracts.
+This document defines the first-slice work packages for the DeepOrra project. It divides implementation into discrete, sequentially executable packages that prevent agents from overwriting each other, editing unrelated files, or inventing contracts.
 
 ## 2. Implementation Order
 
@@ -17,18 +17,18 @@ Some agents may work in parallel only when they edit disjoint owned files.
 1. No agent may change shared contracts without stopping and reporting with a CHANGE-REQUEST (see `AGENTS.md` Section 18.2).
 2. Each agent reads only the docs listed in its work package.
 3. Each agent edits only the folders listed in its ownership.
-4. Shared files (`fcode/config/`, `fcode/storage/`, `fcode/utils/`) require explicit coordination.
+4. Shared files (`deeporra/config/`, `deeporra/storage/`, `deeporra/utils/`) require explicit coordination.
 5. When two agents need the same file, the agent that needs it more gets it; the other waits.
 6. Conflicts are resolved by the project owner, not by agents guessing.
 
-### Shared Utility Folder: `fcode/utils/`
+### Shared Utility Folder: `deeporra/utils/`
 
-`fcode/utils/` is owned by the CLI/Config Agent. Other agents may add utility functions only if:
+`deeporra/utils/` is owned by the CLI/Config Agent. Other agents may add utility functions only if:
 - The utility is used by at least two packages.
 - The task report explicitly justifies it.
 - No domain-specific package is a better home.
 
-Domain-specific helpers must stay in their domain folders, not `fcode/utils/`.
+Domain-specific helpers must stay in their domain folders, not `deeporra/utils/`.
 
 ## 4. Required Docs Before Work
 
@@ -65,7 +65,7 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 - `docs/01_CONTEXT.md`
 
 **Allowed Files/Folders:**
-- `fcode/contracts/`
+- `deeporra/contracts/`
 
 **Forbidden Files/Folders:**
 - Any feature module folder (cli, storage, scanner, parser, chunking, embeddings, indexing, graph, retrieval, mcp_server, dashboard, reports)
@@ -73,11 +73,11 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 **Dependencies:** None (this is the first work package)
 
 **Expected Outputs:**
-- `fcode/contracts/__init__.py` — package init with `__all__`
-- `fcode/contracts/enums.py` — `IndexPhase`, `IndexState`, `ParseStatus`, `FileType`, `SymbolType`, `GraphNodeType`, `GraphRelation`, `HttpMethod`, `Confidence`, `ChunkType`, `SearchMode`, `DiagnosticSeverity`, `SupportedSetupAgent`
-- `fcode/contracts/models.py` — all dataclasses (`RepoInput`, `ScannedFile`, `SkipFileDiagnostic`, `ScanResult`, `ParsedSymbol`, `ParsedImport`, `ParsedRoute`, `ParsedFile`, `GraphBuildResult`, `CodeChunk`, `EmbeddingRecord`, `EmbeddingBatchResult`, `StoredChunkRef`, `IndexBuildResult`, `IndexCounts`, `IndexRunResult`, `IndexDiagnostic`, `IndexStatusRecord`, `DoctorCheck`, `DoctorResult`, `EvidenceItem`, `RetrievalCandidate`, `FCodeConfig`, `ToolResult`, `ToolError`, `EmbeddingInput`, `EmbeddingMetadata`, `GraphNodeInput`, `GraphEdgeInput`)
-- `fcode/contracts/errors.py` — `ErrorCode`, `McpErrorCode`
-- `fcode/contracts/interfaces.py` — protocol interfaces for all feature modules
+- `deeporra/contracts/__init__.py` — package init with `__all__`
+- `deeporra/contracts/enums.py` — `IndexPhase`, `IndexState`, `ParseStatus`, `FileType`, `SymbolType`, `GraphNodeType`, `GraphRelation`, `HttpMethod`, `Confidence`, `ChunkType`, `SearchMode`, `DiagnosticSeverity`, `SupportedSetupAgent`
+- `deeporra/contracts/models.py` — all dataclasses (`RepoInput`, `ScannedFile`, `SkipFileDiagnostic`, `ScanResult`, `ParsedSymbol`, `ParsedImport`, `ParsedRoute`, `ParsedFile`, `GraphBuildResult`, `CodeChunk`, `EmbeddingRecord`, `EmbeddingBatchResult`, `StoredChunkRef`, `IndexBuildResult`, `IndexCounts`, `IndexRunResult`, `IndexDiagnostic`, `IndexStatusRecord`, `DoctorCheck`, `DoctorResult`, `EvidenceItem`, `RetrievalCandidate`, `deeporraConfig`, `ToolResult`, `ToolError`, `EmbeddingInput`, `EmbeddingMetadata`, `GraphNodeInput`, `GraphEdgeInput`)
+- `deeporra/contracts/errors.py` — `ErrorCode`, `McpErrorCode`
+- `deeporra/contracts/interfaces.py` — protocol interfaces for all feature modules
 
 **Required Tests (owned by Integration/Contracts Agent):**
 - `tests/unit/test_contracts.py` — enum values, model defaults
@@ -86,14 +86,14 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 
 **Documentation Updates:**
 - Update `docs/01_CONTEXT.md` to reference WP0
-- Update `docs/03_SYSTEM_ARCHITECTURE.md` to include `fcode/contracts/`
+- Update `docs/03_SYSTEM_ARCHITECTURE.md` to include `deeporra/contracts/`
 
 **Completion Report:**
 ```
 ## Completion Report — Contracts Agent
 
 **Files changed:**
-- fcode/contracts/*.py
+- deeporra/contracts/*.py
 
 **What was implemented:**
 - Shared enums, models, errors, protocol interfaces
@@ -127,48 +127,48 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 - `docs/03_SYSTEM_ARCHITECTURE.md`
 
 **Allowed Files/Folders:**
-- `fcode/cli/`
-- `fcode/config/`
-- `fcode/utils/`
-- `fcode/__init__.py`
-- `fcode/__main__.py`
-- `fcode/contracts/` (read-only imports)
+- `deeporra/cli/`
+- `deeporra/config/`
+- `deeporra/utils/`
+- `deeporra/__init__.py`
+- `deeporra/__main__.py`
+- `deeporra/contracts/` (read-only imports)
 
 **Forbidden Files/Folders:**
-- `fcode/mcp_server/`
-- `fcode/dashboard/`
-- `fcode/storage/`
-- `fcode/parser/`
-- `fcode/scanner/`
-- `fcode/chunking/`
-- `fcode/embeddings/`
-- `fcode/indexing/`
-- `fcode/graph/`
-- `fcode/retrieval/`
+- `deeporra/mcp_server/`
+- `deeporra/dashboard/`
+- `deeporra/storage/`
+- `deeporra/parser/`
+- `deeporra/scanner/`
+- `deeporra/chunking/`
+- `deeporra/embeddings/`
+- `deeporra/indexing/`
+- `deeporra/graph/`
+- `deeporra/retrieval/`
 
 **Dependencies:** None (this agent can start first)
 
 **Functional commands:**
-- `fcode index <repo_path>` — accept path, validate, call `index_service`, print result
-- `fcode status [repo_path]` — query SQLite for index status, print
-- `fcode doctor` — check dependencies (Python version, imports, model availability)
+- `deeporra index <repo_path>` — accept path, validate, call `index_service`, print result
+- `deeporra status [repo_path]` — query SQLite for index status, print
+- `deeporra doctor` — check dependencies (Python version, imports, model availability)
 
 **Deferred stubs (exit code 2):**
-- `fcode dashboard` — print "This command is not available in the first implementation slice.", exit 2
-- `fcode mcp --repo <repo_path>` — same
-- `fcode setup <agent> --repo <repo_path>` — same
+- `deeporra dashboard` — print "This command is not available in the first implementation slice.", exit 2
+- `deeporra mcp --repo <repo_path>` — same
+- `deeporra setup <agent> --repo <repo_path>` — same
 
 **Expected Outputs:**
-- `fcode/cli/main.py` — Typer app (entry point: `fcode.cli.main:app`)
-- `fcode/cli/index_cmd.py` — `fcode index` command
-- `fcode/cli/status_cmd.py` — `fcode status` command
-- `fcode/cli/dashboard_cmd.py` — `fcode dashboard` stub
-- `fcode/cli/mcp_cmd.py` — `fcode mcp` stub
-- `fcode/cli/doctor_cmd.py` — `fcode doctor` command
-- `fcode/cli/setup_cmd.py` — `fcode setup` stub
-- `fcode/config/settings.py` — configuration management
-- `fcode/config/defaults.py` — default values
-- `fcode/__main__.py` — entry point
+- `deeporra/cli/main.py` — Typer app (entry point: `deeporra.cli.main:app`)
+- `deeporra/cli/index_cmd.py` — `deeporra index` command
+- `deeporra/cli/status_cmd.py` — `deeporra status` command
+- `deeporra/cli/dashboard_cmd.py` — `deeporra dashboard` stub
+- `deeporra/cli/mcp_cmd.py` — `deeporra mcp` stub
+- `deeporra/cli/doctor_cmd.py` — `deeporra doctor` command
+- `deeporra/cli/setup_cmd.py` — `deeporra setup` stub
+- `deeporra/config/settings.py` — configuration management
+- `deeporra/config/defaults.py` — default values
+- `deeporra/__main__.py` — entry point
 
 **Required Tests (owned by CLI/Config Agent):**
 - `tests/unit/test_index_cmd.py`
@@ -216,29 +216,29 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 - `docs/04_DATA_MODEL.md`
 
 **Allowed Files/Folders:**
-- `fcode/storage/`
-- `fcode/contracts/` (read-only imports)
+- `deeporra/storage/`
+- `deeporra/contracts/` (read-only imports)
 
 **Forbidden Files/Folders:**
-- `fcode/cli/`
-- `fcode/mcp_server/`
-- `fcode/dashboard/`
-- `fcode/parser/`
-- `fcode/scanner/`
-- `fcode/chunking/`
-- `fcode/embeddings/`
-- `fcode/indexing/`
-- `fcode/graph/`
-- `fcode/retrieval/`
+- `deeporra/cli/`
+- `deeporra/mcp_server/`
+- `deeporra/dashboard/`
+- `deeporra/parser/`
+- `deeporra/scanner/`
+- `deeporra/chunking/`
+- `deeporra/embeddings/`
+- `deeporra/indexing/`
+- `deeporra/graph/`
+- `deeporra/retrieval/`
 
 **Dependencies:** None (can start in parallel with WP1 and WP3)
 
 **Expected Outputs:**
-- `fcode/storage/sqlite_store.py` — SQLite operations (repositories, files, symbols, chunks, code_nodes, code_edges, index_status, repo_reports, tool_call_logs, schema_version)
-- `fcode/storage/chroma_store.py` — Chroma operations (code_chunks collection, upsert, delete by repo_id, query)
-- `fcode/storage/graph_store.py` — code_nodes, code_edges table operations
-- `fcode/storage/fts_store.py` — FTS5 (create, rebuild, search chunks_fts and symbols_fts, LIKE fallback)
-- `fcode/storage/migrations/` — schema migration scripts
+- `deeporra/storage/sqlite_store.py` — SQLite operations (repositories, files, symbols, chunks, code_nodes, code_edges, index_status, repo_reports, tool_call_logs, schema_version)
+- `deeporra/storage/chroma_store.py` — Chroma operations (code_chunks collection, upsert, delete by repo_id, query)
+- `deeporra/storage/graph_store.py` — code_nodes, code_edges table operations
+- `deeporra/storage/fts_store.py` — FTS5 (create, rebuild, search chunks_fts and symbols_fts, LIKE fallback)
+- `deeporra/storage/migrations/` — schema migration scripts
 
 **Storage module boundaries (must not violate):**
 - `sqlite_store.py` accesses SQLite only.
@@ -294,31 +294,31 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 - `docs/05_INDEXING_AND_RETRIEVAL.md`
 
 **Allowed Files/Folders:**
-- `fcode/scanner/`
-- `fcode/parser/`
-- `fcode/graph/graph_builder.py`
-- `fcode/contracts/` (read-only imports)
+- `deeporra/scanner/`
+- `deeporra/parser/`
+- `deeporra/graph/graph_builder.py`
+- `deeporra/contracts/` (read-only imports)
 
 **Forbidden Files/Folders:**
-- `fcode/storage/`
-- `fcode/mcp_server/`
-- `fcode/dashboard/`
-- `fcode/graph/graph_traverser.py`
-- `fcode/graph/impact_analyzer.py`
-- `fcode/indexing/`
-- `fcode/cli/`
+- `deeporra/storage/`
+- `deeporra/mcp_server/`
+- `deeporra/dashboard/`
+- `deeporra/graph/graph_traverser.py`
+- `deeporra/graph/impact_analyzer.py`
+- `deeporra/indexing/`
+- `deeporra/cli/`
 
 **Dependencies:** None (can start in parallel with WP1 and WP2)
 
 **Expected Outputs:**
-- `fcode/scanner/file_scanner.py` — file discovery with eligibility, single scan, sorted deterministic order
-- `fcode/scanner/ignore_rules.py` — `.gitignore`, `.fcodeignore`, hardcoded ignores
-- `fcode/scanner/secret_detector.py` — `.env` detection, secret pattern detection, `has_secrets` flagging
-- `fcode/parser/python_ast.py` — Python AST parsing (no tree-sitter)
-- `fcode/parser/symbol_extractor.py` — function/class/method/variable extraction
-- `fcode/parser/import_extractor.py` — import extraction (ParsedImport with module_name, imported_names, alias, line_number)
-- `fcode/parser/route_detector.py` — FastAPI/Flask route detection
-- `fcode/graph/graph_builder.py` — code relationship extraction (nodes: file, function, class, method, route, import, test; edges: defines, imports, inherits, calls, tests, handles_route; variables produce no graph nodes)
+- `deeporra/scanner/file_scanner.py` — file discovery with eligibility, single scan, sorted deterministic order
+- `deeporra/scanner/ignore_rules.py` — `.gitignore`, `.deeporraignore`, hardcoded ignores
+- `deeporra/scanner/secret_detector.py` — `.env` detection, secret pattern detection, `has_secrets` flagging
+- `deeporra/parser/python_ast.py` — Python AST parsing (no tree-sitter)
+- `deeporra/parser/symbol_extractor.py` — function/class/method/variable extraction
+- `deeporra/parser/import_extractor.py` — import extraction (ParsedImport with module_name, imported_names, alias, line_number)
+- `deeporra/parser/route_detector.py` — FastAPI/Flask route detection
+- `deeporra/graph/graph_builder.py` — code relationship extraction (nodes: file, function, class, method, route, import, test; edges: defines, imports, inherits, calls, tests, handles_route; variables produce no graph nodes)
 
 **Required Tests (owned by Scanner/Parser Agent):**
 - `tests/unit/test_file_scanner.py`
@@ -371,24 +371,24 @@ that every feature module depends on. Eliminate duplicate definitions across mod
 - `docs/05_INDEXING_AND_RETRIEVAL.md`
 
 **Allowed Files/Folders:**
-- `fcode/chunking/`
-- `fcode/embeddings/`
-- `fcode/contracts/` (read-only imports)
+- `deeporra/chunking/`
+- `deeporra/embeddings/`
+- `deeporra/contracts/` (read-only imports)
 
 **Forbidden Files/Folders:**
-- `fcode/parser/`
-- `fcode/storage/`
-- `fcode/mcp_server/`
-- `fcode/dashboard/`
-- `fcode/indexing/`
-- `fcode/scanner/`
-- `fcode/graph/`
+- `deeporra/parser/`
+- `deeporra/storage/`
+- `deeporra/mcp_server/`
+- `deeporra/dashboard/`
+- `deeporra/indexing/`
+- `deeporra/scanner/`
+- `deeporra/graph/`
 
 **Dependencies:** Scanner/Parser Agent (needs parser output format — `ParsedFile`, `ParsedSymbol`, `ParsedRoute`)
 
 **Expected Outputs:**
-- `fcode/chunking/chunker.py` — semantic chunk creation (Python: file_summary, function, class, method, route, test; Markdown: readme_section by Markdown heading; RST: readme_section by RST section heading; Config: config chunks at 100-line blocks; Generic text: no chunks) with input validation (scanned/parsed file matching)
-- `fcode/embeddings/encoder.py` — Sentence Transformers encoding (device='cpu', batch=100, dimension=384, local-only loading, no hardcoded cache path, per-chunk failure handling, embedding_count verification)
+- `deeporra/chunking/chunker.py` — semantic chunk creation (Python: file_summary, function, class, method, route, test; Markdown: readme_section by Markdown heading; RST: readme_section by RST section heading; Config: config chunks at 100-line blocks; Generic text: no chunks) with input validation (scanned/parsed file matching)
+- `deeporra/embeddings/encoder.py` — Sentence Transformers encoding (device='cpu', batch=100, dimension=384, local-only loading, no hardcoded cache path, per-chunk failure handling, embedding_count verification)
 
 **Required Tests (owned by Chunking/Embeddings Agent):**
 - `tests/unit/test_chunker.py`
@@ -443,7 +443,7 @@ encoder invocation, embedding-result validation (type, counts, records, vectors,
 graph builder invocation, graph-result validation (type, nodes, edges, counts, paths, deps), and
 embedding/graph diagnostic classification. Fatal error handler `_build_fatal` extended with `chunks`
 and `embedding_result` kwargs. Backward-compatible constructor (keyword-only `encoder` and `graph_builder`
-parameters). `fcode/embeddings/__init__.py` exports `EXPECTED_DIMENSION`. No storage, persistence, or CLI activation was added in Step 3.
+parameters). `deeporra/embeddings/__init__.py` exports `EXPECTED_DIMENSION`. No storage, persistence, or CLI activation was added in Step 3.
 
 ### WP5 Step 4 — Complete
 
@@ -451,11 +451,11 @@ Step 4 added `IndexService.build_through_sqlite_fts()` with keyword-only injecte
 
 ### WP5 Step 5 — Complete
 
-Step 5 added `build_complete_index()` and its thin `run_index()` wrapper. The complete in-memory attempt enters `STORING`, writes SQLite/FTS, local Chroma vectors, and graph rows to an isolated `.fcode/generations/<generation>` directory, verifies the reopened stores, marks the staged status `complete`, and atomically promotes `.fcode/active.json`. The prior active generation remains usable until promotion verification succeeds; failed stages and stale managed staging markers are removed safely. Full rebuild only is supported. Incremental indexing, source edits, hosted services, CLI activation, and Step 6 command exposure remained deferred until Step 6.
+Step 5 added `build_complete_index()` and its thin `run_index()` wrapper. The complete in-memory attempt enters `STORING`, writes SQLite/FTS, local Chroma vectors, and graph rows to an isolated `.deeporra/generations/<generation>` directory, verifies the reopened stores, marks the staged status `complete`, and atomically promotes `.deeporra/active.json`. The prior active generation remains usable until promotion verification succeeds; failed stages and stale managed staging markers are removed safely. Full rebuild only is supported. Incremental indexing, source edits, hosted services, CLI activation, and Step 6 command exposure remained deferred until Step 6.
 
 ### WP5 Step 6 — Complete
 
-Step 6 activates the existing `fcode index [repo]` and `fcode status [repo]` commands. Index lazily composes the accepted local pipeline and calls `run_index()` once. Status is bound to the requested repository, reads only `.fcode/active.json` and its referenced complete generation, and returns canonical persisted counts without scanning, model loading, or workspace mutation. No active index is a healthy status result; invalid active metadata is a sanitized failure.
+Step 6 activates the existing `deeporra index [repo]` and `deeporra status [repo]` commands. Index lazily composes the accepted local pipeline and calls `run_index()` once. Status is bound to the requested repository, reads only `.deeporra/active.json` and its referenced complete generation, and returns canonical persisted counts without scanning, model loading, or workspace mutation. No active index is a healthy status result; invalid active metadata is a sanitized failure.
 
 ### WP5 Step 7 — Complete
 
@@ -463,7 +463,7 @@ Step 7 performed the final WP5 acceptance, comprehensive branch audit, targeted 
 
 ### WP5 — Complete
 
-All seven WP5 steps are complete. The indexing pipeline provides state machine control, repository validation, scanning, parsing, chunking, embedding, graph construction, SQLite/FTS5 persistence, Chroma persistence, graph persistence, isolated staged generations, cross-store verification, safe active-generation promotion, previous-active preservation on failure, and working `fcode index` and `fcode status` CLI commands.
+All seven WP5 steps are complete. The indexing pipeline provides state machine control, repository validation, scanning, parsing, chunking, embedding, graph construction, SQLite/FTS5 persistence, Chroma persistence, graph persistence, isolated staged generations, cross-store verification, safe active-generation promotion, previous-active preservation on failure, and working `deeporra index` and `deeporra status` CLI commands.
 
 ### WP6 — Acceptance and Release Readiness
 
@@ -479,27 +479,27 @@ WP6 is acceptance and release-readiness work for the completed WP5 indexing slic
 - `docs/05_INDEXING_AND_RETRIEVAL.md`
 
 **Allowed Files/Folders:**
-- `fcode/indexing/`
-- `fcode/contracts/` (read-only imports)
+- `deeporra/indexing/`
+- `deeporra/contracts/` (read-only imports)
 
 **Forbidden Files/Folders:**
-- `fcode/cli/`
-- `fcode/storage/` (read-only calls through public interface)
-- `fcode/parser/`
-- `fcode/scanner/`
-- `fcode/chunking/`
-- `fcode/embeddings/`
-- `fcode/graph/`
-- `fcode/mcp_server/`
-- `fcode/dashboard/`
-- `fcode/retrieval/`
+- `deeporra/cli/`
+- `deeporra/storage/` (read-only calls through public interface)
+- `deeporra/parser/`
+- `deeporra/scanner/`
+- `deeporra/chunking/`
+- `deeporra/embeddings/`
+- `deeporra/graph/`
+- `deeporra/mcp_server/`
+- `deeporra/dashboard/`
+- `deeporra/retrieval/`
 
 **Dependencies:** WP1 (CLI interface), WP2 (storage modules), WP3 (scanner, parser, graph builder), WP4 (chunker, encoder)
 
 **Expected Outputs:**
-- `fcode/indexing/__init__.py`
-- `fcode/indexing/state_machine.py` — pure state controller (no I/O)
-- `fcode/indexing/index_service.py` — pipeline orchestrator (Step 2: scan→parse→chunk in memory)
+- `deeporra/indexing/__init__.py`
+- `deeporra/indexing/state_machine.py` — pure state controller (no I/O)
+- `deeporra/indexing/index_service.py` — pipeline orchestrator (Step 2: scan→parse→chunk in memory)
 
 **`state_machine.py` contract:**
 - `IndexStateMachine` — deterministic state machine with legal forward transitions and ERROR from every non-terminal state
@@ -531,7 +531,7 @@ WP6 is acceptance and release-readiness work for the completed WP5 indexing slic
 
 **WP5 Step 2 contract changes:**
 - `IndexBuildResult` — new dataclass with fields: run_result, completed_phase, state_history, persistent_replacement_started, scan_result, parsed_files, chunks, embedding_result, graph_result
-- `fcode/indexing/index_service.py` — new module; `IndexService` class with `build_through_chunking()` only (no `run_index`, `get_status`, `get_counts`)
+- `deeporra/indexing/index_service.py` — new module; `IndexService` class with `build_through_chunking()` only (no `run_index`, `get_status`, `get_counts`)
 
 **Documentation Updates:**
 - Update any doc if contracts changed during integration
@@ -576,7 +576,7 @@ WP6 is acceptance and release-readiness work for the completed WP5 indexing slic
 - `tests/`
 
 **Forbidden Files/Folders:**
-- `fcode/` (no production code)
+- `deeporra/` (no production code)
 
 **Dependencies:** All WP1-WP5 (needs implemented code to test)
 

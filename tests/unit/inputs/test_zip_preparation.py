@@ -7,13 +7,13 @@ import zipfile
 
 import pytest
 
-from fcode.inputs.errors import (
+from deeporra.inputs.errors import (
     ArchiveLimitExceededError,
     UnsafeArchiveError,
 )
-from fcode.inputs.models import InputKind
-from fcode.inputs.zip_preparation import prepare_zip
-from fcode.inputs.workspace import OwnedWorkspace
+from deeporra.inputs.models import InputKind
+from deeporra.inputs.zip_preparation import prepare_zip
+from deeporra.inputs.workspace import OwnedWorkspace
 
 
 def _make_zip(zip_path, entries):

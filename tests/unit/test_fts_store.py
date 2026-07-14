@@ -7,8 +7,8 @@ import uuid as uuid_mod
 
 import pytest
 
-from fcode.storage.fts_store import FTSStore
-from fcode.storage.sqlite_store import SQLiteStore
+from deeporra.storage.fts_store import FTSStore
+from deeporra.storage.sqlite_store import SQLiteStore
 
 
 @pytest.fixture
@@ -226,7 +226,7 @@ class TestFTSStoreProtocol:
 
     def test_protocol_conformance(self, db):
         import inspect
-        from fcode.contracts.interfaces import FTSStoreProtocol
+        from deeporra.contracts.interfaces import FTSStoreProtocol
         sig_rebuild = inspect.signature(FTSStoreProtocol.rebuild)
         sig_reset = inspect.signature(FTSStoreProtocol.reset)
         assert list(sig_rebuild.parameters.keys()) == ["self", "chunks"]

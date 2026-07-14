@@ -8,17 +8,17 @@ from typing import Any
 
 import pytest
 
-from fcode.contracts.enums import ChunkType, ParseStatus
-from fcode.contracts.errors import ErrorCode
-from fcode.contracts.models import (
+from deeporra.contracts.enums import ChunkType, ParseStatus
+from deeporra.contracts.errors import ErrorCode
+from deeporra.contracts.models import (
     CodeChunk,
     EmbeddingBatchResult,
     EmbeddingInput,
     EmbeddingMetadata,
     EmbeddingRecord,
 )
-from fcode.embeddings import EmbeddingEncoder, EmbeddingEncoderError, build_embedding_inputs
-from fcode.embeddings.encoder import (
+from deeporra.embeddings import EmbeddingEncoder, EmbeddingEncoderError, build_embedding_inputs
+from deeporra.embeddings.encoder import (
     BATCH_SIZE,
     EXPECTED_DIMENSION,
     MAX_EMBEDDING_BYTES,
@@ -199,16 +199,16 @@ class TestEmbeddingBatchResultContract:
 
 class TestEncoderProtocol:
     def test_protocol_exposes_ensure_available(self):
-        from fcode.contracts.interfaces import EmbeddingEncoderProtocol
+        from deeporra.contracts.interfaces import EmbeddingEncoderProtocol
         assert hasattr(EmbeddingEncoderProtocol, "ensure_available")
 
     def test_protocol_exposes_encode(self):
-        from fcode.contracts.interfaces import EmbeddingEncoderProtocol
+        from deeporra.contracts.interfaces import EmbeddingEncoderProtocol
         assert hasattr(EmbeddingEncoderProtocol, "encode")
 
     def test_concrete_param_names_match_protocol(self):
         import inspect
-        from fcode.contracts.interfaces import EmbeddingEncoderProtocol
+        from deeporra.contracts.interfaces import EmbeddingEncoderProtocol
         proto = inspect.signature(EmbeddingEncoderProtocol.encode)
         impl = inspect.signature(EmbeddingEncoder.encode)
         proto_params = list(proto.parameters.keys())
@@ -337,7 +337,7 @@ class TestBuildEmbeddingInputs:
 class TestLazyModelLoading:
     def test_package_import_does_not_import_sentence_transformers(self):
         before = {m for m in sys.modules if "sentence_transformers" in m}
-        import fcode.embeddings  # noqa: F811
+        import deeporra.embeddings  # noqa: F811
         after = {m for m in sys.modules if "sentence_transformers" in m}
         assert after == before
 
@@ -817,11 +817,11 @@ class TestDeterminismAndSafety:
         source = inspect.getsource(EmbeddingEncoder.encode) + inspect.getsource(EmbeddingEncoder._load_model)
         assert "chromadb" not in source
         assert "sqlite3" not in source
-        before = {k for k in sys.modules if "chromadb" in k or "sqlite3" in k or "fcode.storage" in k}
+        before = {k for k in sys.modules if "chromadb" in k or "sqlite3" in k or "deeporra.storage" in k}
         _inject_st(monkeypatch)
         enc = EmbeddingEncoder()
         enc.encode([_input("c1")])
-        after = {k for k in sys.modules if "chromadb" in k or "sqlite3" in k or "fcode.storage" in k}
+        after = {k for k in sys.modules if "chromadb" in k or "sqlite3" in k or "deeporra.storage" in k}
         assert after == before
 
     def test_encoder_does_not_access_network(self, monkeypatch):
@@ -960,15 +960,15 @@ class TestEnsureAvailable:
 
 class TestExports:
     def test_embedding_encoder_exported(self):
-        from fcode.embeddings import EmbeddingEncoder
+        from deeporra.embeddings import EmbeddingEncoder
         assert EmbeddingEncoder is not None
 
     def test_embedding_encoder_error_exported(self):
-        from fcode.embeddings import EmbeddingEncoderError
+        from deeporra.embeddings import EmbeddingEncoderError
         assert EmbeddingEncoderError is not None
 
     def test_build_embedding_inputs_exported(self):
-        from fcode.embeddings import build_embedding_inputs
+        from deeporra.embeddings import build_embedding_inputs
         assert build_embedding_inputs is not None
 
 
@@ -1016,5 +1016,5 @@ class TestEmptyMetadataFilePath:
 
 
 def test_expected_dimension_re_export():
-    from fcode.embeddings import EXPECTED_DIMENSION as re_exported
+    from deeporra.embeddings import EXPECTED_DIMENSION as re_exported
     assert re_exported == 384

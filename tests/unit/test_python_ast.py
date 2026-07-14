@@ -1,7 +1,7 @@
 """Tests for python_ast.py (the main parser)."""
 
-from fcode.contracts import FileType, ParseStatus, ScannedFile, SymbolType
-from fcode.parser.python_ast import parse_python_file, parse
+from deeporra.contracts import FileType, ParseStatus, ScannedFile, SymbolType
+from deeporra.parser.python_ast import parse_python_file, parse
 
 
 def _file(path, content="", is_binary=False) -> ScannedFile:

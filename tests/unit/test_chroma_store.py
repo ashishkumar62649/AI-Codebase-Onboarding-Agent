@@ -5,8 +5,8 @@ import tempfile
 
 import pytest
 
-from fcode.contracts.models import EmbeddingRecord, EmbeddingMetadata
-from fcode.contracts.enums import ChunkType
+from deeporra.contracts.models import EmbeddingRecord, EmbeddingMetadata
+from deeporra.contracts.enums import ChunkType
 
 
 def _can_import_chroma():
@@ -27,7 +27,7 @@ def chroma_path():
 def store(chroma_path):
     if not _can_import_chroma():
         pytest.skip("chromadb not installed")
-    from fcode.storage.chroma_store import ChromaStore
+    from deeporra.storage.chroma_store import ChromaStore
     s = ChromaStore(chroma_path)
     s.open()
     yield s
@@ -199,7 +199,7 @@ class TestPersistence:
     def test_persistence_survives_reopen(self, chroma_path):
         if not _can_import_chroma():
             pytest.skip("chromadb not installed")
-        from fcode.storage.chroma_store import ChromaStore
+        from deeporra.storage.chroma_store import ChromaStore
         s1 = ChromaStore(chroma_path)
         s1.open()
         rec = EmbeddingRecord(

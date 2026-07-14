@@ -1,10 +1,10 @@
-# 03_SYSTEM_ARCHITECTURE.md — F Code System Architecture
+# 03_SYSTEM_ARCHITECTURE.md — DeepOrra System Architecture
 
 ## 1. Architecture Summary
 
-Current runtime interfaces are `fcode index`, `fcode status`, and `fcode doctor`. MCP, dashboard, retrieval, and setup workflows are deferred.
+Current runtime interfaces are `deeporra index`, `deeporra status`, and `deeporra doctor`. MCP, dashboard, retrieval, and setup workflows are deferred.
 
-F Code is a local-first Python CLI package with three interfaces:
+DeepOrra is a local-first Python CLI package with three interfaces:
 - **CLI** — primary entry point for indexing and management
 - **MCP stdio server** — read-only tools for coding agents
 - **Streamlit dashboard** — local UI for human inspection
@@ -17,9 +17,9 @@ Only the CLI path is active in the current build. The MCP and dashboard paths in
 
 ```
 User's Laptop
-├── fcode CLI ──────────────────> fcode modules ──────────> .fcode/ (local storage)
-├── MCP stdio server ───────────> fcode modules ──────────> .fcode/ (local storage)
-└── Streamlit dashboard ────────> fcode modules ──────────> .fcode/ (local storage)
+├── deeporra CLI ──────────────────> deeporra modules ──────────> .deeporra/ (local storage)
+├── MCP stdio server ───────────> deeporra modules ──────────> .deeporra/ (local storage)
+└── Streamlit dashboard ────────> deeporra modules ──────────> .deeporra/ (local storage)
                                               │
                                               v
                                     SQLite (metadata, graph, FTS5)
@@ -32,12 +32,12 @@ No network calls during operation. No cloud services. No external APIs.
 
 | Command | Mode | Description | First Slice |
 |---------|------|-------------|-------------|
-| `fcode index <repo_path>` | Indexing | Scan, parse, embed, build graph | Functional |
-| `fcode status [repo_path]` | Status | Show index status and stats | Functional |
-| `fcode dashboard` | Dashboard | Start Streamlit on localhost | Stub (exit 2) |
-| `fcode mcp --repo <repo_path>` | MCP Server | Start MCP stdio server | Stub (exit 2) |
-| `fcode doctor` | Diagnostics | Check dependencies and health | Functional |
-| `fcode setup <agent> --repo <repo_path>` | Setup | Configure agent integration | Stub (exit 2) |
+| `deeporra index <repo_path>` | Indexing | Scan, parse, embed, build graph | Functional |
+| `deeporra status [repo_path]` | Status | Show index status and stats | Functional |
+| `deeporra dashboard` | Dashboard | Start Streamlit on localhost | Stub (exit 2) |
+| `deeporra mcp --repo <repo_path>` | MCP Server | Start MCP stdio server | Stub (exit 2) |
+| `deeporra doctor` | Diagnostics | Check dependencies and health | Functional |
+| `deeporra setup <agent> --repo <repo_path>` | Setup | Configure agent integration | Stub (exit 2) |
 
 **Chunking data flow:** The chunker is the only component that creates `CodeChunk` values. It receives sanitized text from `ScannedFile.safe_content` and Python structure from `ParsedFile`. It never reopens original repository files. Python chunks use `ParsedFile` symbols, imports, and routes for structure. Markdown/RST, config, and generic-text chunks use only `ScannedFile.safe_content`. The scanner is the only component that reads original repository files.
 
@@ -46,7 +46,7 @@ No network calls during operation. No cloud services. No external APIs.
 ## 4. CLI Architecture
 
 ```
-fcode CLI (Typer)
+deeporra CLI (Typer)
 ├── index command ──────> index_service (orchestrator)
 │                          ├── scanner ──────> file discovery, ignore rules, secret detection
 │                          ├── parser ───────> Python AST extraction, symbol extraction
@@ -63,9 +63,9 @@ fcode CLI (Typer)
 
 The CLI is thin. It parses arguments and calls service modules. No business logic in CLI handlers.
 
-**Pipeline orchestration:** The `fcode/indexing/index_service.py` module owns pipeline orchestration. It controls status transitions, executes cleanup rules, maps fatal errors to the error catalog, and contains no parser/storage/chunking algorithms. `IndexService.build_through_chunking()` orchestrates config validation, scanner call, parser loop with recoverable error handling, and chunker call — producing an `IndexBuildResult` with in-memory scan, parse, and chunk data. `IndexService.build_through_graphing()` extends the pipeline through embedding (input construction + encoder call) and graph extraction (graph builder call). `IndexService.build_through_sqlite_fts()` uses injected SQLite and FTS stores to persist repository metadata, parsed structures, chunks, and evidence-backed keyword indexes in the same attempt. `build_complete_index()` stages SQLite/FTS, local Chroma vectors, and graph records in one isolated local generation, verifies them after reopening, then atomically replaces the active-generation pointer and reaches `COMPLETE`. `run_index()` is its thin complete-attempt wrapper. Full rebuild only is supported: the prior active generation remains intact until promotion verification completes; stale managed staging markers are removed safely. Incremental indexing, source edits, hosted services, and CLI activation remain deferred.
+**Pipeline orchestration:** The `deeporra/indexing/index_service.py` module owns pipeline orchestration. It controls status transitions, executes cleanup rules, maps fatal errors to the error catalog, and contains no parser/storage/chunking algorithms. `IndexService.build_through_chunking()` orchestrates config validation, scanner call, parser loop with recoverable error handling, and chunker call — producing an `IndexBuildResult` with in-memory scan, parse, and chunk data. `IndexService.build_through_graphing()` extends the pipeline through embedding (input construction + encoder call) and graph extraction (graph builder call). `IndexService.build_through_sqlite_fts()` uses injected SQLite and FTS stores to persist repository metadata, parsed structures, chunks, and evidence-backed keyword indexes in the same attempt. `build_complete_index()` stages SQLite/FTS, local Chroma vectors, and graph records in one isolated local generation, verifies them after reopening, then atomically replaces the active-generation pointer and reaches `COMPLETE`. `run_index()` is its thin complete-attempt wrapper. Full rebuild only is supported: the prior active generation remains intact until promotion verification completes; stale managed staging markers are removed safely. Incremental indexing, source edits, hosted services, and CLI activation remain deferred.
 
-WP5 Step 6 activates the existing Typer `fcode index [repo]` and `fcode status [repo]` commands. CLI composition is lazy and local: index constructs the accepted production pipeline and calls `run_index()` once; status reads only the active generation through the canonical pointer and never indexes, loads the embedding model, or creates a workspace. No-index status is a healthy zero-count response.
+WP5 Step 6 activates the existing Typer `deeporra index [repo]` and `deeporra status [repo]` commands. CLI composition is lazy and local: index constructs the accepted production pipeline and calls `run_index()` once; status reads only the active generation through the canonical pointer and never indexes, loads the embedding model, or creates a workspace. No-index status is a healthy zero-count response.
 
 ## 5. Indexer Architecture
 
@@ -100,7 +100,7 @@ Storage Layer
 │   └── code_chunks collection (vectors + metadata)
 │
 └── Filesystem
-    └── .fcode/reports/ (generated reports)
+    └── .deeporra/reports/ (generated reports)
 ```
 
 ## 7. Deferred Retrieval Architecture
@@ -129,7 +129,7 @@ Code Graph (first implementation slice)
 
 **First-slice scope:** Graph extraction only. Graph traversal, hybrid graph retrieval, impact analysis, and change-risk analysis are deferred to the Retrieval/Graph Agent phase.
 
-**Ownership:** `fcode/graph/graph_builder.py` is owned by the Scanner/Parser Agent. `fcode/graph/graph_traverser.py` and `fcode/graph/impact_analyzer.py` are owned by the Retrieval/Graph Agent (later phase).
+**Ownership:** `deeporra/graph/graph_builder.py` is owned by the Scanner/Parser Agent. `deeporra/graph/graph_traverser.py` and `deeporra/graph/impact_analyzer.py` are owned by the Retrieval/Graph Agent (later phase).
 
 ## 9. Deferred MCP Server Architecture
 
@@ -196,7 +196,7 @@ Security Layers
 ### Indexing Flow
 
 ```
-User: fcode index /path/to/repo
+User: deeporra index /path/to/repo
   │
   v
 Scanner: discover files, apply ignore rules, detect secrets
@@ -217,7 +217,7 @@ Graph builder: extract nodes and edges from AST
 Storage: write SQLite tables + Chroma collection
   │
   v
-Done: .fcode/ directory created with index
+Done: .deeporra/ directory created with index
 ```
 
 ### MCP Tool Flow
@@ -295,11 +295,11 @@ Return: ranked evidence with file paths, symbols, line ranges
 
 ## 14. Module Boundaries
 
-`fcode/indexing/` contains:
+`deeporra/indexing/` contains:
 - `state_machine.py` — a pure state controller that performs no I/O, imports no feature modules, and knows nothing about the repository path. It tracks indexing state, active phase, completed phase, history, and the Phase-C persistent-replacement flag.
 - `index_service.py` — the pipeline orchestrator (Step 2: scan→parse→chunk; Step 3: embedding+graph; Step 4: storage — deferred).
 
-`fcode/indexing/index_service.py` is owned by the Integration Agent. It is the only module that controls:
+`deeporra/indexing/index_service.py` is owned by the Integration Agent. It is the only module that controls:
 - Phase order
 - Phase progress
 - Active-status transitions
@@ -323,26 +323,26 @@ Return: ranked evidence with file paths, symbols, line ranges
 
 | Module | Responsibility | Depends On |
 |--------|---------------|------------|
-| `fcode/contracts/` | Shared enums, models, errors, interfaces (WP0) | None |
-| `fcode/cli/` | CLI entry point, argument parsing | contracts + All services |
-| `fcode/config/` | Configuration management | None |
-| `fcode/indexing/` | Pipeline orchestration (Phase A, B, C) and pure state machine | All index services |
-| `fcode/scanner/` | File discovery, ignore rules, secret detection | None |
-| `fcode/parser/` | Python AST extraction | None |
-| `fcode/chunking/` | Semantic chunk creation from safe scanner content and parser structure | scanner + parser output |
-| `fcode/embeddings/` | Sentence Transformers encoding | None |
-| `fcode/storage/` | SQLite + Chroma operations | None |
-| `fcode/retrieval/` | Hybrid search + ranking | storage, embeddings |
-| `fcode/graph/` | Code graph extraction + traversal | parser output, storage |
-| `fcode/mcp_server/` | MCP stdio server | retrieval, graph, storage |
-| `fcode/dashboard/` | Streamlit UI | All services |
-| `fcode/reports/` | Report generation | storage, graph |
-| `fcode/utils/` | Shared utilities (owned by CLI/Config Agent; see ownership rules) | None |
+| `deeporra/contracts/` | Shared enums, models, errors, interfaces (WP0) | None |
+| `deeporra/cli/` | CLI entry point, argument parsing | contracts + All services |
+| `deeporra/config/` | Configuration management | None |
+| `deeporra/indexing/` | Pipeline orchestration (Phase A, B, C) and pure state machine | All index services |
+| `deeporra/scanner/` | File discovery, ignore rules, secret detection | None |
+| `deeporra/parser/` | Python AST extraction | None |
+| `deeporra/chunking/` | Semantic chunk creation from safe scanner content and parser structure | scanner + parser output |
+| `deeporra/embeddings/` | Sentence Transformers encoding | None |
+| `deeporra/storage/` | SQLite + Chroma operations | None |
+| `deeporra/retrieval/` | Hybrid search + ranking | storage, embeddings |
+| `deeporra/graph/` | Code graph extraction + traversal | parser output, storage |
+| `deeporra/mcp_server/` | MCP stdio server | retrieval, graph, storage |
+| `deeporra/dashboard/` | Streamlit UI | All services |
+| `deeporra/reports/` | Report generation | storage, graph |
+| `deeporra/utils/` | Shared utilities (owned by CLI/Config Agent; see ownership rules) | None |
 
 ## 15. Package/Folder Structure
 
 ```
-fcode/
+deeporra/
 ├── __init__.py          # Re-exports contracts
 ├── __main__.py          # CLI entry point
 ├── contracts/           # WP0 — Shared contracts package
@@ -354,12 +354,12 @@ fcode/
 ├── cli/
 │   ├── __init__.py
 │   ├── main.py          # Typer commands
-│   ├── index_cmd.py     # fcode index
-│   ├── status_cmd.py    # fcode status
-│   ├── dashboard_cmd.py # fcode dashboard
-│   ├── mcp_cmd.py       # fcode mcp
-│   ├── doctor_cmd.py    # fcode doctor
-│   └── setup_cmd.py     # fcode setup
+│   ├── index_cmd.py     # deeporra index
+│   ├── status_cmd.py    # deeporra status
+│   ├── dashboard_cmd.py # deeporra dashboard
+│   ├── mcp_cmd.py       # deeporra mcp
+│   ├── doctor_cmd.py    # deeporra doctor
+│   └── setup_cmd.py     # deeporra setup
 ├── config/
 │   ├── __init__.py
 │   ├── settings.py      # configuration management
@@ -367,7 +367,7 @@ fcode/
 ├── scanner/
 │   ├── __init__.py
 │   ├── file_scanner.py  # file discovery
-│   ├── ignore_rules.py  # .gitignore, .fcodeignore
+│   ├── ignore_rules.py  # .gitignore, .deeporraignore
 │   └── secret_detector.py # .env, API keys
 ├── parser/
 │   ├── __init__.py
@@ -543,7 +543,7 @@ Tree-sitter packages must not be imported in current-build code. They are declar
 4. **Sentence Transformers over API embeddings** — No API key needed. Runs locally.
 5. **Python AST over tree-sitter only** — Python first. tree-sitter-python adds depth.
 6. **Native graph over NetworkX** — Lightweight. SQL recursive queries for traversal.
-7. **Typer over argparse** — Cleaner CLI UX. Standard Python CLI approach. Entry point: `fcode.cli.main:app`.
+7. **Typer over argparse** — Cleaner CLI UX. Standard Python CLI approach. Entry point: `deeporra.cli.main:app`.
 
 ## 20. Architecture Anti-Patterns
 
@@ -559,22 +559,22 @@ Do NOT:
 
 ## 21. Config File Schema
 
-`.fcode/config.json` defines the index configuration for a repository. This file must not contain API keys.
+`.deeporra/config.json` defines the index configuration for a repository. This file must not contain API keys.
 
 ```json
 {
   "schema_version": 1,
   "repo_id": "uuid",
   "repo_path": "/absolute/path/to/repo",
-  "index_path": "/absolute/path/to/repo/.fcode",
+  "index_path": "/absolute/path/to/repo/.deeporra",
   "embedding": {
     "provider": "sentence_transformers",
     "model_name": "sentence-transformers/all-MiniLM-L6-v2",
     "dimension": 384
   },
   "storage": {
-    "sqlite_path": ".fcode/index.db",
-    "chroma_path": ".fcode/chroma"
+    "sqlite_path": ".deeporra/index.db",
+    "chroma_path": ".deeporra/chroma"
   },
   "indexing": {
     "python_only": true,
@@ -589,15 +589,15 @@ Do NOT:
 ```
 
 **Rules:**
-- This file is repo-local inside `.fcode/`.
-- If embedding model or dimension changes, F Code must require full reindex.
+- This file is repo-local inside `.deeporra/`.
+- If embedding model or dimension changes, DeepOrra must require full reindex.
 - `allow_cloud_llm` defaults to `false`.
 - Schema version tracks config format for future migrations.
 
 ## 22. Locked Architecture Decisions
 
-1. **MCP server process model:** Subprocess via `fcode mcp --repo <path>` that the coding agent launches.
+1. **MCP server process model:** Subprocess via `deeporra mcp --repo <path>` that the coding agent launches.
 2. **Dashboard SQLite connection:** Separate connections; SQLite handles concurrent reads fine.
 3. **Monorepo subdirectory indexing:** Not in current build; one repo per index.
 4. **Graph traversal method:** SQL recursive CTE for 2-hop queries; direct SQL for 1-hop lookups. In-memory traversal allowed only in tests and debugging utilities.
-5. **Embedding model:** Configurable via `.fcode/config.json` with default `sentence-transformers/all-MiniLM-L6-v2`, dimension 384. Changing model or dimension requires full reindex.
+5. **Embedding model:** Configurable via `.deeporra/config.json` with default `sentence-transformers/all-MiniLM-L6-v2`, dimension 384. Changing model or dimension requires full reindex.

@@ -2,7 +2,7 @@
 
 import pytest
 
-from fcode.contracts import (
+from deeporra.contracts import (
     ChunkType,
     Confidence,
     DiagnosticSeverity,
@@ -112,7 +112,7 @@ class TestEnums:
 
 class TestModels:
     def test_doctor_result_all_passed(self):
-        from fcode.contracts import DoctorCheck, DoctorResult
+        from deeporra.contracts import DoctorCheck, DoctorResult
         r = DoctorResult(checks=[
             DoctorCheck(name="a", passed=True, message="ok"),
             DoctorCheck(name="b", passed=True, message="ok"),
@@ -120,7 +120,7 @@ class TestModels:
         assert r.all_passed
 
     def test_doctor_result_not_all_passed(self):
-        from fcode.contracts import DoctorCheck, DoctorResult
+        from deeporra.contracts import DoctorCheck, DoctorResult
         r = DoctorResult(checks=[
             DoctorCheck(name="a", passed=True, message="ok"),
             DoctorCheck(name="b", passed=False, message="fail"),
@@ -128,19 +128,19 @@ class TestModels:
         assert not r.all_passed
 
     def test_index_run_result_defaults(self):
-        from fcode.contracts import IndexRunResult, IndexState, IndexPhase
+        from deeporra.contracts import IndexRunResult, IndexState, IndexPhase
         r = IndexRunResult(state=IndexState.PENDING, phase=IndexPhase.SCAN)
         assert r.state == IndexState.PENDING
         assert r.phase == IndexPhase.SCAN
         assert r.counts.scanned == 0
 
     def test_scanned_file_defaults(self):
-        from fcode.contracts import ScannedFile, FileType
+        from deeporra.contracts import ScannedFile, FileType
         f = ScannedFile(file_path="test.py", file_type=FileType.SOURCE, size_bytes=100)
         assert not f.is_binary
 
     def test_code_chunk_canonical_fields(self):
-        from fcode.contracts import CodeChunk, ChunkType
+        from deeporra.contracts import CodeChunk, ChunkType
         c = CodeChunk(
             chunk_id="id-1",
             file_id="file-1",
@@ -169,13 +169,13 @@ class TestModels:
         assert c.metadata["has_secrets"] is False
 
     def test_code_chunk_no_stale_fields(self):
-        from fcode.contracts import CodeChunk
+        from deeporra.contracts import CodeChunk
         assert not hasattr(CodeChunk, "text")
         assert not hasattr(CodeChunk, "source_file")
         assert not hasattr(CodeChunk, "embedding")
 
     def test_code_chunk_file_path_required(self):
-        from fcode.contracts import CodeChunk, ChunkType
+        from deeporra.contracts import CodeChunk, ChunkType
         with pytest.raises(TypeError, match="required positional argument|missing.*required.*argument"):
             CodeChunk(
                 chunk_id="x", file_id="y", chunk_type=ChunkType.FILE_SUMMARY,
@@ -188,7 +188,7 @@ class TestModels:
 
 class TestIndexCounts:
     def test_preserves_old_fields(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts(scanned=1, parsed=2, graph_nodes=3, graph_edges=4, chunks=5, embedded=6)
         assert c.scanned == 1
         assert c.parsed == 2
@@ -198,7 +198,7 @@ class TestIndexCounts:
         assert c.embedded == 6
 
     def test_contains_all_new_fields(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts(parse_errors=7, symbols=8, embedding_eligible=9,
                         embedding_skipped=10, embedding_failed=11, warnings=12, errors=13)
         assert c.parse_errors == 7
@@ -210,30 +210,30 @@ class TestIndexCounts:
         assert c.errors == 13
 
     def test_defaults_are_zero(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts()
         for field_name in c.__dataclass_fields__:
             assert getattr(c, field_name) == 0
 
     def test_validation_accepts_zero_values(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts()
         c.validate()  # should not raise
 
     def test_rejects_negative_values(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts(scanned=-1)
         with pytest.raises(ValueError):
             c.validate()
 
     def test_rejects_booleans(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts(scanned=True)  # type: ignore
         with pytest.raises(ValueError):
             c.validate()
 
     def test_rejects_non_integers(self):
-        from fcode.contracts import IndexCounts
+        from deeporra.contracts import IndexCounts
         c = IndexCounts(scanned="five")  # type: ignore
         with pytest.raises(ValueError):
             c.validate()
@@ -244,8 +244,8 @@ class TestIndexCounts:
 
 class TestIndexDiagnostic:
     def test_exact_fields(self):
-        from fcode.contracts import IndexDiagnostic, DiagnosticSeverity
-        from fcode.contracts.enums import IndexPhase
+        from deeporra.contracts import IndexDiagnostic, DiagnosticSeverity
+        from deeporra.contracts.enums import IndexPhase
         d = IndexDiagnostic(
             code="test_code",
             message="test message",
@@ -264,17 +264,17 @@ class TestIndexDiagnostic:
         assert d.details == "some details"
 
     def test_warning_recoverable_combination_validates(self):
-        from fcode.contracts import IndexDiagnostic, DiagnosticSeverity
+        from deeporra.contracts import IndexDiagnostic, DiagnosticSeverity
         d = IndexDiagnostic(code="w", message="warning", recoverable=True, severity=DiagnosticSeverity.WARNING)
         d.validate()
 
     def test_error_nonrecoverable_combination_validates(self):
-        from fcode.contracts import IndexDiagnostic, DiagnosticSeverity
+        from deeporra.contracts import IndexDiagnostic, DiagnosticSeverity
         d = IndexDiagnostic(code="e", message="error", recoverable=False, severity=DiagnosticSeverity.ERROR)
         d.validate()
 
     def test_inconsistent_severity_recoverable_rejected(self):
-        from fcode.contracts import IndexDiagnostic, DiagnosticSeverity
+        from deeporra.contracts import IndexDiagnostic, DiagnosticSeverity
         d = IndexDiagnostic(code="x", message="bad", recoverable=False, severity=DiagnosticSeverity.WARNING)
         with pytest.raises(ValueError):
             d.validate()
@@ -283,37 +283,37 @@ class TestIndexDiagnostic:
             d2.validate()
 
     def test_absolute_diagnostic_path_rejected(self):
-        from fcode.contracts import IndexDiagnostic
+        from deeporra.contracts import IndexDiagnostic
         d = IndexDiagnostic(code="x", message="test", repo_relative_path="/absolute/path")
         with pytest.raises(ValueError):
             d.validate()
 
     def test_traversal_diagnostic_path_rejected(self):
-        from fcode.contracts import IndexDiagnostic
+        from deeporra.contracts import IndexDiagnostic
         d = IndexDiagnostic(code="x", message="test", repo_relative_path="src/../secret")
         with pytest.raises(ValueError):
             d.validate()
 
     def test_backslash_diagnostic_path_rejected(self):
-        from fcode.contracts import IndexDiagnostic
+        from deeporra.contracts import IndexDiagnostic
         d = IndexDiagnostic(code="x", message="test", repo_relative_path="src\\main.py")
         with pytest.raises(ValueError):
             d.validate()
 
     def test_empty_diagnostic_code_rejected(self):
-        from fcode.contracts import IndexDiagnostic
+        from deeporra.contracts import IndexDiagnostic
         d = IndexDiagnostic(code="", message="test")
         with pytest.raises(ValueError):
             d.validate()
 
     def test_empty_diagnostic_message_rejected(self):
-        from fcode.contracts import IndexDiagnostic
+        from deeporra.contracts import IndexDiagnostic
         d = IndexDiagnostic(code="x", message="")
         with pytest.raises(ValueError):
             d.validate()
 
     def test_message_over_500_characters_rejected(self):
-        from fcode.contracts import IndexDiagnostic
+        from deeporra.contracts import IndexDiagnostic
         d = IndexDiagnostic(code="x", message="x" * 501)
         with pytest.raises(ValueError):
             d.validate()
@@ -324,7 +324,7 @@ class TestIndexDiagnostic:
 
 class TestIndexRunResult:
     def test_defaults_to_pending_and_phase_none(self):
-        from fcode.contracts import IndexRunResult, IndexState
+        from deeporra.contracts import IndexRunResult, IndexState
         r = IndexRunResult()
         assert r.state == IndexState.PENDING
         assert r.phase is None
@@ -333,19 +333,19 @@ class TestIndexRunResult:
         assert r.errors == []
 
     def test_validates_legal_state_phase_combinations(self):
-        from fcode.contracts import IndexRunResult, IndexState, IndexPhase
+        from deeporra.contracts import IndexRunResult, IndexState, IndexPhase
         r = IndexRunResult(state=IndexState.SCANNING, phase=IndexPhase.SCAN)
         r.validate()
 
     def test_rejects_illegal_state_phase_combinations(self):
-        from fcode.contracts import IndexRunResult, IndexState, IndexPhase
+        from deeporra.contracts import IndexRunResult, IndexState, IndexPhase
         r = IndexRunResult(state=IndexState.PENDING, phase=IndexPhase.SCAN)
         with pytest.raises(ValueError):
             r.validate()
 
     def test_complete_rejects_fatal_diagnostics(self):
-        from fcode.contracts import IndexRunResult, IndexState, IndexPhase
-        from fcode.contracts import IndexDiagnostic, DiagnosticSeverity
+        from deeporra.contracts import IndexRunResult, IndexState, IndexPhase
+        from deeporra.contracts import IndexDiagnostic, DiagnosticSeverity
         fatal = IndexDiagnostic(code="fatal", message="fatal error", recoverable=False,
                                 severity=DiagnosticSeverity.ERROR)
         r = IndexRunResult(state=IndexState.COMPLETE, phase=IndexPhase.PERSIST,
@@ -354,12 +354,12 @@ class TestIndexRunResult:
             r.validate()
 
     def test_error_requires_fatal_evidence(self):
-        from fcode.contracts import IndexRunResult, IndexState, IndexPhase
+        from deeporra.contracts import IndexRunResult, IndexState, IndexPhase
         r = IndexRunResult(state=IndexState.ERROR, phase=IndexPhase.SCAN)
         with pytest.raises(ValueError):
             r.validate()
 
     def test_errors_compatibility_field_remains_present(self):
-        from fcode.contracts import IndexRunResult
+        from deeporra.contracts import IndexRunResult
         r = IndexRunResult(errors=["something went wrong"])
         assert r.errors == ["something went wrong"]

@@ -1,6 +1,6 @@
 """In-process doctor command tests — verify diagnostic content without repeated subprocess launches."""
 
-from fcode.utils.health import run_doctor
+from deeporra.utils.health import run_doctor
 
 
 class TestDoctorDiagnostics:

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fcode.contracts import FCodeConfig, IndexRunResult, IndexState, IndexPhase
-from fcode.cli.commands.index_cmd import (
+from deeporra.contracts import DeepOrraConfig, IndexRunResult, IndexState, IndexPhase
+from deeporra.cli.commands.index_cmd import (
     get_index_service,
     set_index_service,
 )
@@ -18,7 +18,7 @@ class FakeIndexService:
         self.called = False
         self.last_config = None
 
-    def run_index(self, config: FCodeConfig) -> IndexRunResult:
+    def run_index(self, config: DeepOrraConfig) -> IndexRunResult:
         self.called = True
         self.last_config = config
         return IndexRunResult(state=IndexState.PASSED, phase=IndexPhase.PERSIST)
@@ -43,21 +43,21 @@ class TestComposition:
         fake = FakeIndexService()
         set_index_service(fake)
         result = subprocess.run(
-            [sys.executable, "-m", "fcode", "index", str(tmp_path / "nonexistent")],
+            [sys.executable, "-m", "deeporra", "index", str(tmp_path / "nonexistent")],
             capture_output=True, text=True, timeout=15,
         )
         assert result.returncode == 1
         assert "Index complete." not in result.stdout
 
     def test_configure_app_in_main(self):
-        from fcode.cli.main import configure_app
+        from deeporra.cli.main import configure_app
         assert configure_app is not None
 
 
 class TestCommand:
     def test_failure_is_sanitized(self, tmp_path):
         result = subprocess.run(
-            [sys.executable, "-m", "fcode", "index", str(tmp_path / "nonexistent")],
+            [sys.executable, "-m", "deeporra", "index", str(tmp_path / "nonexistent")],
             capture_output=True, text=True, timeout=15,
         )
         assert result.returncode == 1

@@ -6,15 +6,15 @@ import uuid
 
 import pytest
 
-from fcode.chunking import Chunker
-from fcode.contracts.enums import (
+from deeporra.chunking import Chunker
+from deeporra.contracts.enums import (
     ChunkType,
     FileType,
     HttpMethod,
     ParseStatus,
     SymbolType,
 )
-from fcode.contracts.models import (
+from deeporra.contracts.models import (
     CodeChunk,
     ParsedFile,
     ParsedImport,
@@ -208,7 +208,7 @@ class TestPublicContract:
         assert isinstance(result, list)
 
     def test_concrete_param_names_match_protocol(self):
-        from fcode.contracts.interfaces import ChunkerProtocol
+        from deeporra.contracts.interfaces import ChunkerProtocol
         import inspect
         proto = list(inspect.signature(ChunkerProtocol.chunk).parameters.keys())
         impl = list(inspect.signature(Chunker.chunk).parameters.keys())
@@ -217,7 +217,7 @@ class TestPublicContract:
 
 class TestCodeChunkCanonical:
     def test_canonical_fields_present(self):
-        from fcode.contracts import CodeChunk, ChunkType
+        from deeporra.contracts import CodeChunk, ChunkType
         c = CodeChunk(
             chunk_id="a", file_id="b", chunk_type=ChunkType.FILE_SUMMARY,
             content="c", start_line=1, end_line=1, file_path="mod.py",
@@ -233,7 +233,7 @@ class TestCodeChunkCanonical:
         assert hasattr(c, "metadata")
 
     def test_no_stale_fields(self):
-        from fcode.contracts import CodeChunk, ChunkType
+        from deeporra.contracts import CodeChunk, ChunkType
         assert not hasattr(CodeChunk, "text")
         assert not hasattr(CodeChunk, "source_file")
         assert not hasattr(CodeChunk, "embedding")
@@ -265,7 +265,7 @@ class TestCodeChunkCanonical:
             assert chunk.metadata["has_secrets"] is True
 
     def test_no_embedding_field(self):
-        from fcode.contracts import CodeChunk
+        from deeporra.contracts import CodeChunk
         assert not hasattr(CodeChunk, "embedding")
 
 
@@ -654,7 +654,7 @@ class TestConfigurationChunking:
             "cfg.json", "cfg.toml", "cfg.yaml", "cfg.yml",
             "cfg.ini", "cfg.cfg", "requirements.txt",
             "requirements-dev.txt", "pyproject.toml",
-            "Makefile", "Dockerfile", ".gitignore", ".fcodeignore",
+            "Makefile", "Dockerfile", ".gitignore", ".deeporraignore",
         ]
         for name in names:
             sf = _config_scanned(name, "key = value\n", file_id=f"file:{name}")
@@ -814,7 +814,7 @@ class TestInvalidInputs:
 
 class TestFilePathRequired:
     def test_code_chunk_file_path_required(self):
-        from fcode.contracts import CodeChunk, ChunkType
+        from deeporra.contracts import CodeChunk, ChunkType
         with pytest.raises(TypeError):
             CodeChunk(
                 chunk_id="x", file_id="y", chunk_type=ChunkType.FILE_SUMMARY,

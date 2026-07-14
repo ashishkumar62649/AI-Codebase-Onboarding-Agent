@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fcode.contracts import (
+from deeporra.contracts import (
     ChunkType,
     CodeChunk,
     DiagnosticSeverity,
@@ -15,7 +15,7 @@ from fcode.contracts import (
     EmbeddingMetadata,
     EmbeddingRecord,
     ErrorCode,
-    FCodeConfig,
+    DeepOrraConfig,
     GraphBuildResult,
     GraphEdgeInput,
     GraphNodeInput,
@@ -30,8 +30,8 @@ from fcode.contracts import (
     FileType,
     Confidence,
 )
-from fcode.embeddings import EXPECTED_DIMENSION
-from fcode.indexing.index_service import IndexService
+from deeporra.embeddings import EXPECTED_DIMENSION
+from deeporra.indexing.index_service import IndexService
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -149,16 +149,16 @@ class TestConstructorDeps:
     def test_encoder_none_raises_on_graphing(self):
         svc = _make_default_service(encoder=None, graph_builder=MagicMock())
         with pytest.raises(TypeError, match="encoder is required"):
-            svc.build_through_graphing(FCodeConfig(repo_path="."))
+            svc.build_through_graphing(DeepOrraConfig(repo_path="."))
 
     def test_graph_builder_none_raises_on_graphing(self):
         svc = _make_default_service(encoder=MagicMock(), graph_builder=None)
         with pytest.raises(TypeError, match="graph_builder is required"):
-            svc.build_through_graphing(FCodeConfig(repo_path="."))
+            svc.build_through_graphing(DeepOrraConfig(repo_path="."))
 
     def test_encoder_provided_allows_graphing(self):
         svc = _make_default_service(encoder=MagicMock(), graph_builder=MagicMock())
-        svc.build_through_graphing(FCodeConfig(repo_path="."))
+        svc.build_through_graphing(DeepOrraConfig(repo_path="."))
 
 
 @pytest.mark.parametrize("stage", ["inputs", "encoder", "graph"])
@@ -179,7 +179,7 @@ def test_process_control_exceptions_propagate_from_step3(monkeypatch, stage, con
 
     if stage == "inputs":
         monkeypatch.setattr(
-            "fcode.indexing.index_service.build_embedding_inputs",
+            "deeporra.indexing.index_service.build_embedding_inputs",
             lambda _chunks: (_ for _ in ()).throw(control),
         )
     elif stage == "encoder":
@@ -188,7 +188,7 @@ def test_process_control_exceptions_propagate_from_step3(monkeypatch, stage, con
         graph_builder.build.side_effect = control
 
     with pytest.raises(type(control)) as raised:
-        service.build_through_graphing(FCodeConfig(repo_path="."))
+        service.build_through_graphing(DeepOrraConfig(repo_path="."))
 
     assert raised.value is control
 
@@ -199,18 +199,18 @@ def test_process_control_exceptions_propagate_from_step3(monkeypatch, stage, con
 class TestGraphingConfigValidation:
     def test_type_error_on_non_config(self):
         svc = _make_default_service(encoder=MagicMock(), graph_builder=MagicMock())
-        with pytest.raises(TypeError, match="expected FCodeConfig"):
+        with pytest.raises(TypeError, match="expected DeepOrraConfig"):
             svc.build_through_graphing(config="not a config")
 
     def test_config_validation_fails_empty_path(self):
         svc = _make_default_service(encoder=MagicMock(), graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path=""))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path=""))
         assert result.run_result.state == IndexState.ERROR
 
     def test_encoder_not_called_on_config_failure(self):
         encoder = MagicMock()
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path=""))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path=""))
         encoder.encode.assert_not_called()
 
 
@@ -224,7 +224,7 @@ class TestGraphingStep2Failures:
         encoder = MagicMock()
         svc = _make_default_service(scanner=scanner, encoder=encoder,
                                      graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         encoder.encode.assert_not_called()
 
@@ -236,7 +236,7 @@ class TestGraphingStep2Failures:
         encoder = MagicMock()
         svc = _make_default_service(scanner=scanner, parser=parser,
                                      encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         encoder.encode.assert_not_called()
 
@@ -248,7 +248,7 @@ class TestGraphingStep2Failures:
         svc = _make_default_service(scanner=scanner, parser=parser,
                                      chunker=chunker, encoder=encoder,
                                      graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         encoder.encode.assert_not_called()
 
@@ -265,7 +265,7 @@ class TestGraphingStep2Failures:
         scanner, parser, _ = _setup_default_mocks()
         svc = _make_default_service(scanner=scanner, parser=parser,
                                      encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
         encoder.encode.assert_called_once()
 
@@ -277,10 +277,10 @@ class TestEmbeddingInputBuilder:
     def test_embedding_input_builder_exception(self):
         encoder = MagicMock()
         from unittest.mock import patch
-        with patch("fcode.indexing.index_service.build_embedding_inputs",
+        with patch("deeporra.indexing.index_service.build_embedding_inputs",
                    side_effect=ValueError("bad chunk")):
             svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-            result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+            result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
             assert result.run_result.state == IndexState.ERROR
             assert any("EMBEDDING_FAILED" in d.code or "embedding" in d.code
                        for d in result.run_result.diagnostics)
@@ -288,10 +288,10 @@ class TestEmbeddingInputBuilder:
     def test_embedding_input_builder_fails_non_list(self):
         encoder = MagicMock()
         from unittest.mock import patch
-        with patch("fcode.indexing.index_service.build_embedding_inputs",
+        with patch("deeporra.indexing.index_service.build_embedding_inputs",
                    return_value="not a list"):
             svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-            result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+            result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
             assert result.run_result.state == IndexState.ERROR
 
 
@@ -310,7 +310,7 @@ class TestEncoderInvocation:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         encoder.encode.assert_called_once()
         args, _ = encoder.encode.call_args
         assert len(args) >= 1
@@ -331,11 +331,11 @@ class TestEncoderInvocation:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
 
     def test_encoder_exception_with_embedding_encoder_error(self):
-        from fcode.embeddings.encoder import EmbeddingEncoderError
+        from deeporra.embeddings.encoder import EmbeddingEncoderError
         exc = EmbeddingEncoderError(
             ErrorCode.EMBEDDING_MODEL_UNAVAILABLE,
             "model not found",
@@ -349,7 +349,7 @@ class TestEncoderInvocation:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
 
     def test_encoder_exception_no_partial_reaches_error(self):
@@ -357,7 +357,7 @@ class TestEncoderInvocation:
         encoder.encode.side_effect = RuntimeError("total failure")
         graph_builder = MagicMock()
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_encoder_all_chunks_failed_with_partial(self):
@@ -368,7 +368,7 @@ class TestEncoderInvocation:
         encoder.encode.side_effect = exc
         graph_builder = MagicMock()
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
 
@@ -380,14 +380,14 @@ class TestEmbeddingValidation:
         encoder = MagicMock()
         encoder.encode.return_value = "not an EmbeddingBatchResult"
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_negative_eligible_count(self):
         encoder = MagicMock()
         encoder.encode.return_value = _make_batch_result(eligible=-1)
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_success_count_not_matching_records(self):
@@ -397,7 +397,7 @@ class TestEmbeddingValidation:
             records=[_make_valid_record()],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_success_plus_fail_not_eligible(self):
@@ -407,7 +407,7 @@ class TestEmbeddingValidation:
             records=[_make_valid_record()],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_eligible_plus_skipped_not_inputs_length(self):
@@ -417,7 +417,7 @@ class TestEmbeddingValidation:
             records=[_make_valid_record()],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_record_not_embedding_record(self):
@@ -427,7 +427,7 @@ class TestEmbeddingValidation:
             records=["not a record"],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_record_empty_chunk_id(self):
@@ -439,7 +439,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_duplicate_chunk_id(self):
@@ -451,7 +451,7 @@ class TestEmbeddingValidation:
             records=[rec1, rec2],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_unknown_chunk_id(self):
@@ -462,7 +462,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_metadata_chunk_id_mismatch(self):
@@ -474,7 +474,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_vector_wrong_dimension(self):
@@ -486,7 +486,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_vector_contains_bool(self):
@@ -498,7 +498,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_vector_contains_non_numeric(self):
@@ -510,7 +510,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_vector_contains_nan(self):
@@ -522,7 +522,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_vector_contains_inf(self):
@@ -534,7 +534,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_metadata_absolute_path(self):
@@ -545,7 +545,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_metadata_traversal_path(self):
@@ -556,7 +556,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_metadata_backslash_path(self):
@@ -567,7 +567,7 @@ class TestEmbeddingValidation:
             records=[rec],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
 
@@ -581,7 +581,7 @@ class TestEmbeddingAllFailed:
             eligible=1, success=0, fail=1, skipped=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         assert any("all_chunks_failed" in d.code
                    for d in result.run_result.diagnostics)
@@ -592,7 +592,7 @@ class TestEmbeddingAllFailed:
             eligible=2, success=0, fail=2, skipped=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_success_zero_eligible_zero_no_error(self):
@@ -605,7 +605,7 @@ class TestEmbeddingAllFailed:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
 
 
@@ -621,7 +621,7 @@ class TestEmbeddingWarnings:
             warnings=[{"code": "w1", "chunk_id": "c1", "message": "warning"}],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_warning_from_fail_count_with_no_warnings_list(self):
@@ -630,7 +630,7 @@ class TestEmbeddingWarnings:
             eligible=1, success=0, fail=1, skipped=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_non_dict_warning_in_list(self):
@@ -645,7 +645,7 @@ class TestEmbeddingWarnings:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
 
     def test_warning_with_path_sanitization(self):
@@ -655,7 +655,7 @@ class TestEmbeddingWarnings:
             warnings=[{"repo_relative_path": "/bad/path"}],
         )
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
 
@@ -674,7 +674,7 @@ class TestGraphBuilderInvocation:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         graph_builder.build.assert_called_once()
 
     def test_graph_builder_exception(self):
@@ -686,7 +686,7 @@ class TestGraphBuilderInvocation:
         graph_builder = MagicMock()
         graph_builder.build.side_effect = RuntimeError("graph crash")
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_graph_builder_exception_counts_zero(self):
@@ -698,7 +698,7 @@ class TestGraphBuilderInvocation:
         graph_builder = MagicMock()
         graph_builder.build.side_effect = RuntimeError("crash")
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.counts.graph_nodes == 0
         assert result.run_result.counts.graph_edges == 0
 
@@ -716,7 +716,7 @@ class TestGraphValidation:
         graph_builder = MagicMock()
         graph_builder.build.return_value = "not a GraphBuildResult"
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_nodes_not_a_list(self):
@@ -730,7 +730,7 @@ class TestGraphValidation:
             nodes="not a list", edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edges_not_a_list(self):
@@ -744,7 +744,7 @@ class TestGraphValidation:
             nodes=[], edges="not a list", node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_not_graph_node_input(self):
@@ -758,7 +758,7 @@ class TestGraphValidation:
             nodes=["string node"], edges=[], node_count=1, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_empty_id(self):
@@ -773,7 +773,7 @@ class TestGraphValidation:
             nodes=[node], edges=[], node_count=1, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_duplicate_node_ids(self):
@@ -789,7 +789,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[], node_count=2, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_empty_type(self):
@@ -804,7 +804,7 @@ class TestGraphValidation:
             nodes=[node], edges=[], node_count=1, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_absolute_source_file(self):
@@ -820,7 +820,7 @@ class TestGraphValidation:
             nodes=[node], edges=[], node_count=1, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_traversal_source_file(self):
@@ -836,7 +836,7 @@ class TestGraphValidation:
             nodes=[node], edges=[], node_count=1, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_backslash_source_file(self):
@@ -852,7 +852,7 @@ class TestGraphValidation:
             nodes=[node], edges=[], node_count=1, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_not_graph_edge_input(self):
@@ -867,7 +867,7 @@ class TestGraphValidation:
             nodes=[node], edges=["string edge"], node_count=1, edge_count=1,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_duplicate_edge_record_ids(self):
@@ -887,7 +887,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[e1, e2], node_count=2, edge_count=2,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_empty_source_node_id(self):
@@ -905,7 +905,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[e], node_count=2, edge_count=1,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_empty_target_node_id(self):
@@ -923,7 +923,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[e], node_count=2, edge_count=1,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_empty_relation(self):
@@ -940,7 +940,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[e], node_count=2, edge_count=1,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_source_not_known_node(self):
@@ -957,7 +957,7 @@ class TestGraphValidation:
             nodes=[n1], edges=[e], node_count=1, edge_count=1,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_source_file_absolute(self):
@@ -976,7 +976,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[e], node_count=2, edge_count=1,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_node_count_mismatch(self):
@@ -991,7 +991,7 @@ class TestGraphValidation:
             nodes=[node], edges=[], node_count=99, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_edge_count_mismatch(self):
@@ -1009,7 +1009,7 @@ class TestGraphValidation:
             nodes=[n1, n2], edges=[e], node_count=2, edge_count=99,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
 
@@ -1032,7 +1032,7 @@ class TestSuccessfulResult:
             edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
         assert result.run_result.phase == IndexPhase.GRAPH
         assert result.completed_phase == IndexPhase.EMBED
@@ -1052,7 +1052,7 @@ class TestSuccessfulResult:
             edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         c = result.run_result.counts
         assert c.scanned == 1
         assert c.parsed == 1
@@ -1080,7 +1080,7 @@ class TestSuccessfulResult:
             edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.embedding_result is not None
         assert result.graph_result is not None
         assert result.graph_result.node_count == 1
@@ -1098,7 +1098,7 @@ class TestSuccessfulResult:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         fatal = [d for d in result.run_result.diagnostics
                  if d.severity == DiagnosticSeverity.ERROR]
         assert len(fatal) == 0
@@ -1119,7 +1119,7 @@ class TestStateHistory:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.state_history == (
             IndexState.PENDING,
             IndexState.SCANNING,
@@ -1133,7 +1133,7 @@ class TestStateHistory:
         encoder = MagicMock()
         encoder.encode.side_effect = RuntimeError("fail")
         svc = _make_default_service(encoder=encoder, graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         history = result.state_history
         assert IndexState.PENDING in history
         assert IndexState.EMBEDDING in history
@@ -1155,7 +1155,7 @@ class TestSafetyBoundaries:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert not result.persistent_replacement_started
 
     def test_embedding_result_none_on_failure_before_embedding(self):
@@ -1163,7 +1163,7 @@ class TestSafetyBoundaries:
         scanner.scan.side_effect = RuntimeError("scan fail")
         svc = _make_default_service(scanner=scanner, encoder=MagicMock(),
                                      graph_builder=MagicMock())
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.embedding_result is None
 
     def test_graph_result_none_on_failure_before_graph(self):
@@ -1175,7 +1175,7 @@ class TestSafetyBoundaries:
         graph_builder = MagicMock()
         graph_builder.build.side_effect = RuntimeError("graph fail")
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.graph_result is None
 
     def test_chunking_success_builder_not_called(self):
@@ -1186,7 +1186,7 @@ class TestSafetyBoundaries:
         )
         graph_builder = MagicMock()
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         graph_builder.build.assert_called_once()
 
 
@@ -1205,8 +1205,8 @@ class TestDeterminism:
             nodes=[], edges=[], node_count=0, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        r1 = svc.build_through_graphing(FCodeConfig(repo_path="."))
-        r2 = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        r1 = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
+        r2 = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert r1.run_result.state == r2.run_result.state
         assert r1.state_history == r2.state_history
         assert r1.completed_phase == r2.completed_phase
@@ -1231,14 +1231,14 @@ class TestDeterminism:
         scanner.scan.side_effect = scan_side
         # Actually simpler: make service that fails on second call
         svc = _make_default_service(encoder=encoder1, graph_builder=graph_builder1)
-        r1 = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        r1 = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert r1.run_result.state == IndexState.GRAPHING
         # Create a separate failing service
         scanner2 = MagicMock()
         scanner2.scan.side_effect = RuntimeError("fail")
         svc2 = _make_default_service(scanner=scanner2, encoder=MagicMock(),
                                       graph_builder=MagicMock())
-        r2 = svc2.build_through_graphing(FCodeConfig(repo_path="."))
+        r2 = svc2.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert r2.run_result.state == IndexState.ERROR
 
 
@@ -1307,7 +1307,7 @@ class TestCorrectedGraphAcceptance:
             node_count=3, edge_count=2,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
 
     def test_multiple_routes_pass_validation(self):
@@ -1330,7 +1330,7 @@ class TestCorrectedGraphAcceptance:
             node_count=3, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.GRAPHING
 
     def test_rejects_genuinely_invalid_duplicate_nodes(self):
@@ -1348,7 +1348,7 @@ class TestCorrectedGraphAcceptance:
             nodes=[n1, n2], edges=[], node_count=2, edge_count=0,
         )
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
 
     def test_embedding_result_retained_on_graph_failure(self):
@@ -1360,7 +1360,7 @@ class TestCorrectedGraphAcceptance:
         graph_builder = MagicMock()
         graph_builder.build.side_effect = RuntimeError("graph fail")
         svc = _make_default_service(encoder=encoder, graph_builder=graph_builder)
-        result = svc.build_through_graphing(FCodeConfig(repo_path="."))
+        result = svc.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         assert result.embedding_result is not None
         assert result.graph_result is None
@@ -1383,14 +1383,14 @@ class TestGraphIdentityInvariants:
         )
 
     def _success_result(self, srv):
-        r = srv.build_through_graphing(FCodeConfig(repo_path="."))
+        r = srv.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.GRAPHING, (
             f"unexpected ERROR; diag={[d.message for d in r.run_result.diagnostics]}"
         )
         return r
 
     def _fail_result(self, srv):
-        r = srv.build_through_graphing(FCodeConfig(repo_path="."))
+        r = srv.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         return r
 

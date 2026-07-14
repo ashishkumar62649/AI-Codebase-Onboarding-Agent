@@ -1,16 +1,16 @@
-# 01_CONTEXT.md — F Code Master Context
+# 01_CONTEXT.md — DeepOrra Master Context
 
 ## 1. Project Name
 
-**F Code**
+**DeepOrra**
 
 ## 2. One-Sentence Definition
 
-F Code is a local repository intelligence tool that helps AI coding agents avoid writing code that already exists.
+DeepOrra is a local repository intelligence tool that helps AI coding agents avoid writing code that already exists.
 
 ## 3. Core Product Thesis
 
-F Code gives coding agents local, evidence-backed repository intelligence before implementation. It indexes a repository, extracts code relationships, stores them locally, and exposes search and planning tools through MCP so agents can check for existing implementations, find related code, and plan minimal changes — all without leaving their workflow.
+DeepOrra gives coding agents local, evidence-backed repository intelligence before implementation. It indexes a repository, extracts code relationships, stores them locally, and exposes search and planning tools through MCP so agents can check for existing implementations, find related code, and plan minimal changes — all without leaving their workflow.
 
 ## 3a. Eligibility Definition
 
@@ -19,8 +19,8 @@ A path counts as an eligible file when the scanner will create a row for it in t
 - be inside the repository root
 - not be ignored by hardcoded rules
 - not be ignored by `.gitignore`
-- not be ignored by `.fcodeignore`
-- not be inside `.fcode/`
+- not be ignored by `.deeporraignore`
+- not be inside `.deeporra/`
 - not be a symlink
 - not be inside a symlinked directory
 - be readable
@@ -53,7 +53,7 @@ When a coding agent works on an unfamiliar repository, it does not know what alr
 - Suggest changes that break related code
 - Ignore existing tests that cover the area being changed
 
-F Code solves this by giving agents a local intelligence layer that answers "does this already exist?" before they write code.
+DeepOrra solves this by giving agents a local intelligence layer that answers "does this already exist?" before they write code.
 
 ## 5. Target Users
 
@@ -73,7 +73,7 @@ F Code solves this by giving agents a local intelligence layer that answers "doe
 
 MCP, dashboard, and retrieval user workflows are deferred in the current build.
 
-- Python CLI package (`fcode`)
+- Python CLI package (`deeporra`)
 - SQLite for metadata, graph, and keyword search
 - Chroma local persistent vector store
 - Sentence Transformers local embeddings
@@ -95,39 +95,39 @@ MCP, dashboard, and retrieval user workflows are deferred in the current build.
 - PR review automation — later only
 - React frontend — not needed; Streamlit is the UI
 - PostgreSQL — SQLite is sufficient for current build
-- FastAPI — not needed for current build; Streamlit calls local Python directly. FastAPI route detection is only for indexed target repositories that use FastAPI, not for F Code's own runtime
+- FastAPI — not needed for current build; Streamlit calls local Python directly. FastAPI route detection is only for indexed target repositories that use FastAPI, not for DeepOrra's own runtime
 - Graphify as direct dependency — inspiration only
 - Ponytail as direct dependency — principles embedded in prompts only
 
 ## 9. Local-First Principle
 
-F Code runs entirely on the user's laptop. No code is uploaded to any external server. All indexing, storage, retrieval, and tool serving happens locally. The only network calls are:
+DeepOrra runs entirely on the user's laptop. No code is uploaded to any external server. All indexing, storage, retrieval, and tool serving happens locally. The only network calls are:
 - Cloning a public GitHub repository (user-initiated)
 - Embedding generation (local Sentence Transformers, no API)
 
 ## 10. Privacy Principle
 
-Repository source code never leaves the user's machine. F Code does not send code to external APIs for indexing or retrieval. All embeddings are generated locally. All search is local. All MCP tools are local stdio.
+Repository source code never leaves the user's machine. DeepOrra does not send code to external APIs for indexing or retrieval. All embeddings are generated locally. All search is local. All MCP tools are local stdio.
 
 ## 11. Agent-First Principle
 
-F Code's primary interface is MCP tools for coding agents. The human dashboard is secondary. Every feature must first answer: "Does this help a coding agent work better on a repository?"
+DeepOrra's primary interface is MCP tools for coding agents. The human dashboard is secondary. Every feature must first answer: "Does this help a coding agent work better on a repository?"
 
 ## 12. Human Dashboard Principle
 
 The Streamlit dashboard is for human inspection, not the primary workflow. It helps users:
-- See what F Code indexed
+- See what DeepOrra indexed
 - Test queries manually
 - Preview what MCP tools return
 - Inspect repository wiki/structure
 
 ## 13. Anti-Duplication Principle
 
-The core value of F Code is preventing duplicate code. Every retrieval result, every plan, every suggestion should first check: "Does something similar already exist?"
+The core value of DeepOrra is preventing duplicate code. Every retrieval result, every plan, every suggestion should first check: "Does something similar already exist?"
 
 ## 14. Minimal Change Principle
 
-When recommending changes, F Code should recommend modifying existing files over creating new ones, extending existing classes over creating new abstractions, and the smallest diff that solves the problem.
+When recommending changes, DeepOrra should recommend modifying existing files over creating new ones, extending existing classes over creating new abstractions, and the smallest diff that solves the problem.
 
 ## 15. Core Interfaces
 
@@ -156,9 +156,9 @@ When recommending changes, F Code should recommend modifying existing files over
 ## 17. Storage Direction
 
 All storage is local:
-- SQLite database in `.fcode/` directory inside the repository
-- Chroma persistent store in `.fcode/chroma/` directory
-- Generated reports in `.fcode/reports/` directory
+- SQLite database in `.deeporra/` directory inside the repository
+- Chroma persistent store in `.deeporra/chroma/` directory
+- Generated reports in `.deeporra/reports/` directory
 - No cloud database, no remote storage
 
 ## 18. Deferred Retrieval Direction
@@ -245,14 +245,14 @@ Ponytail is a development discipline and inspiration source only. It is NOT a ru
 
 ## 25. Naming Rules
 
-- Product name: **F Code** (always two words, capital F, capital C)
-- CLI command: `fcode`
-- Package name: `fcode`
-- Index directory: `.fcode/`
-- Python package: `fcode/`
-- Config file: `.fcode/config.json`
-- Database file: `.fcode/index.db`
-- Chroma directory: `.fcode/chroma/`
+- Product name: **DeepOrra** (always two words, capital F, capital C)
+- CLI command: `deeporra`
+- Package name: `deeporra`
+- Index directory: `.deeporra/`
+- Python package: `deeporra/`
+- Config file: `.deeporra/config.json`
+- Database file: `.deeporra/index.db`
+- Chroma directory: `.deeporra/chroma/`
 
 ## 26. Documentation Rules
 
@@ -308,7 +308,7 @@ These limits are mandatory hard limits for the current build:
 
 ## 29a. Work Package 0 — Shared Contracts
 
-WP0 (`fcode/contracts/`) is the canonical definition of all shared enums, models,
+WP0 (`deeporra/contracts/`) is the canonical definition of all shared enums, models,
 errors, and protocol interfaces used across the codebase.
 
 - Owned by the Integration/Contracts Agent
@@ -318,7 +318,7 @@ errors, and protocol interfaces used across the codebase.
 
 ## 30. Locked Decisions
 
-1. **CLI framework:** Locked: Typer. Entry point: `fcode.cli.main:app`.
+1. **CLI framework:** Locked: Typer. Entry point: `deeporra.cli.main:app`.
 2. **Embedding model:** Locked: `sentence-transformers/all-MiniLM-L6-v2` (dimension 384). `all-mpnet-base-v2` is not current build. Changing embedding model or dimension requires full reindex.
 3. **Graph traversal depth:** Locked: 2 hops max for current build. Uses SQL recursive CTE.
 4. **Repository size limits:** Hard limits as defined in Section 28.

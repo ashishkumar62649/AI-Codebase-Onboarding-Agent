@@ -7,13 +7,13 @@ import sys
 import types
 from pathlib import Path
 
-from fcode.chunking.chunker import Chunker
-from fcode.contracts import FCodeConfig, RepoInput
-from fcode.embeddings.encoder import EXPECTED_DIMENSION, EmbeddingEncoder
-from fcode.graph.graph_builder import build
-from fcode.indexing.index_service import IndexService
-from fcode.parser.python_ast import parse
-from fcode.scanner.file_scanner import scan
+from deeporra.chunking.chunker import Chunker
+from deeporra.contracts import DeepOrraConfig, RepoInput
+from deeporra.embeddings.encoder import EXPECTED_DIMENSION, EmbeddingEncoder
+from deeporra.graph.graph_builder import build
+from deeporra.indexing.index_service import IndexService
+from deeporra.parser.python_ast import parse
+from deeporra.scanner.file_scanner import scan
 
 ROOT = Path(__file__).parents[1] / "fixtures" / "wp6"
 
@@ -43,7 +43,7 @@ def install_fake_model(monkeypatch):
 
 def analyze(repo: Path, monkeypatch):
     install_fake_model(monkeypatch)
-    config = FCodeConfig(repo_path=str(repo))
+    config = DeepOrraConfig(repo_path=str(repo))
     scanner = types.SimpleNamespace(scan=scan)
     parser = types.SimpleNamespace(parse=parse)
     graph_builder = types.SimpleNamespace(build=build)

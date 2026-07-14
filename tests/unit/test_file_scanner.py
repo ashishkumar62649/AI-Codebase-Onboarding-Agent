@@ -2,16 +2,16 @@
 
 import os
 import tempfile
-from fcode.contracts import FCodeConfig, FileType, ParseStatus, RepoInput
-from fcode.scanner.file_scanner import scan
+from deeporra.contracts import DeepOrraConfig, FileType, ParseStatus, RepoInput
+from deeporra.scanner.file_scanner import scan
 
 
 def _repo(tmpdir: str) -> RepoInput:
     return RepoInput(repo_path=tmpdir)
 
 
-def _config(tmpdir: str) -> FCodeConfig:
-    return FCodeConfig(repo_path=tmpdir)
+def _config(tmpdir: str) -> DeepOrraConfig:
+    return DeepOrraConfig(repo_path=tmpdir)
 
 
 def test_scan_returns_scanresult():
@@ -199,7 +199,7 @@ def test_ignore_patterns():
             f.write("x=1")
         with open(os.path.join(tmp, "ignored.py"), "w") as f:
             f.write("y=2")
-        with open(os.path.join(tmp, ".fcodeignore"), "w") as f:
+        with open(os.path.join(tmp, ".deeporraignore"), "w") as f:
             f.write("ignored.py\n")
         repo = _repo(tmp)
         cfg = _config(tmp)

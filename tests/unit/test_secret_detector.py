@@ -1,6 +1,6 @@
 """Tests for secret_detector.py."""
 
-from fcode.scanner.secret_detector import detect_secrets, REDACTION_MARKER
+from deeporra.scanner.secret_detector import detect_secrets, REDACTION_MARKER
 
 
 def test_api_key_redacted():

@@ -6,19 +6,19 @@ import types
 from pathlib import Path
 
 import pytest
-from fcode.chunking import Chunker
-from fcode.contracts import FCodeConfig, IndexPhase, IndexState
-from fcode.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing import IndexService
-from fcode.indexing.full_rebuild import FullRebuildCoordinator
-from fcode.indexing import full_rebuild
-from fcode.parser.python_ast import parse
-from fcode.scanner.file_scanner import scan
-from fcode.storage.chroma_store import ChromaStore
-from fcode.storage.fts_store import FTSStore
-from fcode.storage.graph_store import GraphStore
-from fcode.storage.sqlite_store import SQLiteStore
+from deeporra.chunking import Chunker
+from deeporra.contracts import DeepOrraConfig, IndexPhase, IndexState
+from deeporra.embeddings import EmbeddingEncoder, EXPECTED_DIMENSION
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing import IndexService
+from deeporra.indexing.full_rebuild import FullRebuildCoordinator
+from deeporra.indexing import full_rebuild
+from deeporra.parser.python_ast import parse
+from deeporra.scanner.file_scanner import scan
+from deeporra.storage.chroma_store import ChromaStore
+from deeporra.storage.fts_store import FTSStore
+from deeporra.storage.graph_store import GraphStore
+from deeporra.storage.sqlite_store import SQLiteStore
 
 
 class _FakeSentenceTransformer:
@@ -129,7 +129,7 @@ def test_wp5_full_rebuild_replaces_only_after_staged_verification(tmp_path, monk
     monkeypatch.setattr(socket, "create_connection", lambda *a, **k: attempts.append((a, k)))
 
     _FakeSentenceTransformer.calls.clear()
-    first = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    first = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert first.run_result.state == IndexState.COMPLETE
     assert first.run_result.phase == IndexPhase.PERSIST
     assert first.completed_phase == IndexPhase.PERSIST
@@ -141,7 +141,7 @@ def test_wp5_full_rebuild_replaces_only_after_staged_verification(tmp_path, monk
     assert all(len(record.vector) == EXPECTED_DIMENSION for record in first.embedding_result.records)
     assert "ghp_abcdefghijklmnopqrstuvwxyz1234567890" not in str(a)
     print("FIRST_BUILD_GENERATION=", a["generation"])
-    print("FIRST_BUILD_POINTER_CONTENT=", (repo / ".fcode" / "active.json").read_text(encoding="utf-8"))
+    print("FIRST_BUILD_POINTER_CONTENT=", (repo / ".deeporra" / "active.json").read_text(encoding="utf-8"))
     print("FIRST_BUILD_SQLITE_CHUNK_IDS=", sorted({chunk.chunk_id for chunk in first.chunks}))
     print("FIRST_BUILD_FTS_IDS=", sorted(row["id"] for row in a["alpha"]))
     print("FIRST_BUILD_CHROMA_IDS=", sorted(a["vectors"]))
@@ -158,7 +158,7 @@ def test_wp5_full_rebuild_replaces_only_after_staged_verification(tmp_path, monk
         raise RuntimeError("controlled vector failure")
 
     monkeypatch.setattr(ChromaStore, "upsert_embeddings", fail_after_write)
-    failed = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    failed = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert failed.run_result.state == IndexState.ERROR
     after_failed = _active_evidence(repo)
     assert after_failed["generation"] == a["generation"]
@@ -166,7 +166,7 @@ def test_wp5_full_rebuild_replaces_only_after_staged_verification(tmp_path, monk
     assert after_failed["alpha"] and not after_failed["beta"]
 
     monkeypatch.setattr(ChromaStore, "upsert_embeddings", original_upsert)
-    success = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    success = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert success.run_result.state == IndexState.COMPLETE
     b = _active_evidence(repo)
     assert b["generation"] != a["generation"]
@@ -217,7 +217,7 @@ def test_failed_replacement_preserves_active_generation_at_each_boundary(
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    assert _service().build_complete_index(FCodeConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
+    assert _service().build_complete_index(DeepOrraConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
     before = _active_evidence(repo)
     _write_b(repo)
 
@@ -287,7 +287,7 @@ def test_failed_replacement_preserves_active_generation_at_each_boundary(
             return original_verify(self, *args, **kwargs)
         monkeypatch.setattr(FullRebuildCoordinator, "_verify_generation", fail_active_verify)
 
-    failed = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    failed = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     monkeypatch.undo()
     after = _active_evidence(repo)
     assert failed.run_result.state == IndexState.ERROR
@@ -308,7 +308,7 @@ def test_obsolete_generation_cleanup_failure_is_a_recoverable_warning(tmp_path, 
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    assert _service().build_complete_index(FCodeConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
+    assert _service().build_complete_index(DeepOrraConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
     old_generation = _active_evidence(repo)["generation"]
     _write_b(repo)
     original_rmtree = full_rebuild.shutil.rmtree
@@ -319,14 +319,14 @@ def test_obsolete_generation_cleanup_failure_is_a_recoverable_warning(tmp_path, 
         return original_rmtree(path, *args, **kwargs)
 
     monkeypatch.setattr(full_rebuild.shutil, "rmtree", fail_old_cleanup)
-    result = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     monkeypatch.undo()
     active = _active_evidence(repo)
     assert result.run_result.state == IndexState.COMPLETE
     assert active["generation"] != old_generation
     assert any(d.code == "cleanup_warning" and d.recoverable for d in result.run_result.diagnostics)
     assert not [d for d in result.run_result.diagnostics if d.severity.value == "error"]
-    assert (repo / ".fcode" / "generations" / old_generation).is_dir()
+    assert (repo / ".deeporra" / "generations" / old_generation).is_dir()
 
 
 def test_run_index_uses_one_complete_pipeline_attempt(tmp_path, monkeypatch):
@@ -360,15 +360,15 @@ def test_run_index_uses_one_complete_pipeline_attempt(tmp_path, monkeypatch):
             return super().build(*args)
 
     original_inputs = full_rebuild.run_step4_persistence
-    original_pipeline_inputs = sys.modules["fcode.indexing.index_service"].build_embedding_inputs
+    original_pipeline_inputs = sys.modules["deeporra.indexing.index_service"].build_embedding_inputs
     original_upsert = ChromaStore.upsert_embeddings
     original_graph_write = GraphStore.store_graph
-    monkeypatch.setattr(sys.modules["fcode.indexing.index_service"], "build_embedding_inputs", lambda *a: (calls.__setitem__("inputs", calls["inputs"] + 1) or original_pipeline_inputs(*a)))
+    monkeypatch.setattr(sys.modules["deeporra.indexing.index_service"], "build_embedding_inputs", lambda *a: (calls.__setitem__("inputs", calls["inputs"] + 1) or original_pipeline_inputs(*a)))
     monkeypatch.setattr(full_rebuild, "run_step4_persistence", lambda *a, **k: (calls.__setitem__("sqlite", calls["sqlite"] + 1) or original_inputs(*a, **k)))
     monkeypatch.setattr(ChromaStore, "upsert_embeddings", lambda self, *a: (calls.__setitem__("chroma", calls["chroma"] + 1) or original_upsert(self, *a)))
     monkeypatch.setattr(GraphStore, "store_graph", lambda self, *a: (calls.__setitem__("graph_store", calls["graph_store"] + 1) or original_graph_write(self, *a)))
     service = IndexService(Scanner(), Parser(), CountChunker(), encoder=CountEncoder(), graph_builder=Builder())
-    result = service.run_index(FCodeConfig(repo_path=str(repo)))
+    result = service.run_index(DeepOrraConfig(repo_path=str(repo)))
     assert result.state == IndexState.COMPLETE
     assert calls["scan"] == calls["chunk"] == calls["encode"] == calls["graph"] == calls["inputs"] == calls["sqlite"] == calls["chroma"] == calls["graph_store"] == 1
     assert calls["parse"] == 3
@@ -388,7 +388,7 @@ def test_process_control_preserves_active_generation_and_cleans_staging(
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    assert _service().build_complete_index(FCodeConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
+    assert _service().build_complete_index(DeepOrraConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
     before = _active_evidence(repo)
     _write_b(repo)
 
@@ -403,12 +403,12 @@ def test_process_control_preserves_active_generation_and_cleans_staging(
         monkeypatch.setattr(FullRebuildCoordinator, "_write_active", raise_control)
 
     with pytest.raises(type(control)) as raised:
-        _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+        _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     assert raised.value is control
 
     monkeypatch.undo()
     after = _active_evidence(repo)
-    workspace = repo / ".fcode"
+    workspace = repo / ".deeporra"
     assert after["generation"] == before["generation"]
     assert after["alpha"] and not after["beta"]
     assert not (workspace / "rebuild.lock").exists()
@@ -423,7 +423,7 @@ def test_cross_store_mismatch_is_rejected_before_promotion(tmp_path, monkeypatch
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    assert _service().build_complete_index(FCodeConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
+    assert _service().build_complete_index(DeepOrraConfig(repo_path=str(repo))).run_result.state == IndexState.COMPLETE
     before = _active_evidence(repo)
     _write_b(repo)
     if mismatch == "fts_missing_id":
@@ -448,7 +448,7 @@ def test_cross_store_mismatch_is_rejected_before_promotion(tmp_path, monkeypatch
     else:
         original = GraphStore.get_nodes
         monkeypatch.setattr(GraphStore, "get_nodes", lambda self, *args: original(self, *args) + [{"id": "foreign", "node_id": "foreign"}])
-    result = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     monkeypatch.undo()
     after = _active_evidence(repo)
     assert result.run_result.state == IndexState.ERROR
@@ -462,7 +462,7 @@ def test_zero_chunk_fts_generation_is_valid(tmp_path, monkeypatch):
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    result = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     active = _active_evidence(repo)
     assert result.run_result.state == IndexState.COMPLETE
     paths = FullRebuildCoordinator(str(repo)).active_paths()
@@ -481,7 +481,7 @@ def test_zero_eligible_embeddings_promotes_a_valid_empty_vector_generation(tmp_p
     fake_module = types.ModuleType("sentence_transformers")
     fake_module.SentenceTransformer = _FakeSentenceTransformer
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
-    result = _service().build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = _service().build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     active = _active_evidence(repo)
     assert result.run_result.state == IndexState.COMPLETE
     assert result.embedding_result.success_count == 0

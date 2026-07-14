@@ -115,8 +115,8 @@ manifest_class_chunk.start_line=8
 manifest_class_chunk.end_line=14
 ```
 
-`fcode/parser/symbol_extractor.py:39` reads `node.end_lineno` for class
-symbols. `fcode/chunking/chunker.py:300` reads the source using the symbol
+`deeporra/parser/symbol_extractor.py:39` reads `node.end_lineno` for class
+symbols. `deeporra/chunking/chunker.py:300` reads the source using the symbol
 range, and `:331-332` copies `sym.start_line` and `sym.end_line` to the
 chunk. The focused tests cover class extraction and class chunk creation;
 the implementation supplies the exact boundary for this fixture.
@@ -174,7 +174,7 @@ the field projection: `_actual_static()` builds `graph = build(parsed)` at
 line 196, where `parsed` contains only the four Python parse candidates.
 The graph builder therefore never receives `guide.rst`, `README.md`, or
 `settings.toml`. The graph builder itself adds one file node for every
-`ParsedFile` it receives at `fcode/graph/graph_builder.py:121-135`.
+`ParsedFile` it receives at `deeporra/graph/graph_builder.py:121-135`.
 
 The duplicate helper checks `Counter` identities before constructing the
 unique-record dictionaries (`test_wp6_g01_exact_semantics.py:297-307`).

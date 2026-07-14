@@ -1,7 +1,7 @@
 """Bootstrap tests — verify repository structure and imports."""
 
 from pathlib import Path
-from fcode import __version__
+from deeporra import __version__
 
 
 class TestPackageStructure:
@@ -9,18 +9,18 @@ class TestPackageStructure:
         assert __version__ == "0.1.0"
 
     def test_contracts_package_exists(self):
-        from fcode.contracts import enums, models, errors, interfaces
+        from deeporra.contracts import enums, models, errors, interfaces
         assert enums is not None
         assert models is not None
         assert errors is not None
         assert interfaces is not None
 
     def test_cli_package_exists(self):
-        from fcode.cli import main
+        from deeporra.cli import main
         assert main is not None
 
     def test_cli_has_expected_commands(self):
-        from fcode.cli.main import app
+        from deeporra.cli.main import app
         cmds = {c.name or c.callback.__name__ for c in app.registered_commands}
         expected = {"index", "status", "doctor", "dashboard", "mcp", "setup"}
         assert cmds == expected
@@ -42,7 +42,7 @@ class TestPackageStructure:
             assert (doc_dir / name).exists(), f"Missing: {name}"
 
     def test_command_modules_exist(self):
-        from fcode.cli.commands import (
+        from deeporra.cli.commands import (
             index_cmd,
             status_cmd,
             doctor_cmd,

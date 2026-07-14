@@ -1,6 +1,6 @@
 """Structural tests — verify WP0 protocol interfaces are structurally sound."""
 
-from fcode.contracts.interfaces import (
+from deeporra.contracts.interfaces import (
     ScannerProtocol,
     PythonParserProtocol,
     GraphBuilderProtocol,
@@ -66,28 +66,28 @@ class TestConcreteSignatureMatch:
 
     def test_graph_store_store_graph_signature(self):
         import inspect
-        from fcode.storage.graph_store import GraphStore
+        from deeporra.storage.graph_store import GraphStore
         proto_sig = inspect.signature(GraphStoreProtocol.store_graph)
         impl_sig = inspect.signature(GraphStore.store_graph)
         assert list(proto_sig.parameters.keys()) == list(impl_sig.parameters.keys())
 
     def test_graph_store_reset_signature(self):
         import inspect
-        from fcode.storage.graph_store import GraphStore
+        from deeporra.storage.graph_store import GraphStore
         proto_sig = inspect.signature(GraphStoreProtocol.reset)
         impl_sig = inspect.signature(GraphStore.reset)
         assert list(proto_sig.parameters.keys()) == list(impl_sig.parameters.keys())
 
     def test_fts_store_rebuild_signature(self):
         import inspect
-        from fcode.storage.fts_store import FTSStore
+        from deeporra.storage.fts_store import FTSStore
         proto_sig = inspect.signature(FTSStoreProtocol.rebuild)
         impl_sig = inspect.signature(FTSStore.rebuild)
         assert list(proto_sig.parameters.keys()) == list(impl_sig.parameters.keys())
 
     def test_fts_store_reset_signature(self):
         import inspect
-        from fcode.storage.fts_store import FTSStore
+        from deeporra.storage.fts_store import FTSStore
         proto_sig = inspect.signature(FTSStoreProtocol.reset)
         impl_sig = inspect.signature(FTSStore.reset)
         assert list(proto_sig.parameters.keys()) == list(impl_sig.parameters.keys())
@@ -103,7 +103,7 @@ class TestConcreteSignatureMatch:
         assert params[2] == "parsed_files"
 
     def test_chunker_concrete_param_names(self):
-        from fcode.chunking import Chunker
+        from deeporra.chunking import Chunker
         import inspect
         proto_params = list(inspect.signature(ChunkerProtocol.chunk).parameters.keys())
         impl_params = list(inspect.signature(Chunker.chunk).parameters.keys())
@@ -120,8 +120,8 @@ class TestEmbeddingEncoderAnnotation:
         import inspect
         from typing import get_origin, get_args, get_type_hints
         from collections.abc import Sequence
-        from fcode.embeddings.encoder import EmbeddingEncoder
-        from fcode.contracts.models import EmbeddingInput, EmbeddingBatchResult
+        from deeporra.embeddings.encoder import EmbeddingEncoder
+        from deeporra.contracts.models import EmbeddingInput, EmbeddingBatchResult
 
         proto_hints = get_type_hints(EmbeddingEncoderProtocol.encode)
         conc_hints = get_type_hints(EmbeddingEncoder.encode)

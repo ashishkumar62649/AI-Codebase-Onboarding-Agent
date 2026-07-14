@@ -1,18 +1,18 @@
-# 05_INDEXING_AND_RETRIEVAL.md — F Code Indexing and Retrieval Specification
+# 05_INDEXING_AND_RETRIEVAL.md — DeepOrra Indexing and Retrieval Specification
 
 ## 1. Indexing Overview
 
-`fcode index` and `fcode status` are active. Retrieval/search workflows are deferred; historical Step references below do not defer those active commands.
+`deeporra index` and `deeporra status` are active. Retrieval/search workflows are deferred; historical Step references below do not defer those active commands.
 
 Indexing is the process of scanning a repository, parsing code, creating chunks, generating embeddings, building the code graph, and storing everything locally.
 
 ```
-repo_path → scan → parse → chunk → embed → graph → store → .fcode/
+repo_path → scan → parse → chunk → embed → graph → store → .deeporra/
 ```
 
 ## 1a. Indexing State Machine
 
-The indexing pipeline is governed by a pure state machine in `fcode/indexing/state_machine.py`.
+The indexing pipeline is governed by a pure state machine in `deeporra/indexing/state_machine.py`.
 It performs no I/O and knows nothing about the repository path.
 
 **Current-build scope (WP5 Steps 2-4):** Step 2 (`IndexService.build_through_chunking`)
@@ -23,9 +23,9 @@ extends the pipeline through embedding (input construction + encoder call) and g
 uses the same state-machine attempt, and atomically stages repository/file metadata, parsed symbols and
 routes, semantic chunks, FTS indexes, and a `storing` status. Success stops nonterminally at `STORING`
 with `phase=PERSIST`, `completed_phase=GRAPH`, and `persistent_replacement_started=True`.
-Step 5 implements full rebuild only: it stages SQLite/FTS, local Chroma vectors, and graph records in an inactive generation; verifies cross-store IDs, counts, dimensions, endpoints, and status; then atomically promotes the active-generation pointer. Success is `COMPLETE` with `phase=PERSIST` and `completed_phase=PERSIST`. Failed stages leave the previous active generation intact. There is no incremental indexing, automatic source edit, hosted service, or CLI activation; Step 6 owns `fcode index` and `fcode status`, and Step 7 owns final acceptance and merge.
+Step 5 implements full rebuild only: it stages SQLite/FTS, local Chroma vectors, and graph records in an inactive generation; verifies cross-store IDs, counts, dimensions, endpoints, and status; then atomically promotes the active-generation pointer. Success is `COMPLETE` with `phase=PERSIST` and `completed_phase=PERSIST`. Failed stages leave the previous active generation intact. There is no incremental indexing, automatic source edit, hosted service, or CLI activation; Step 6 owns `deeporra index` and `deeporra status`, and Step 7 owns final acceptance and merge.
 
-Step 6 exposes `fcode index [repo]` for one full local rebuild (exit 0 on `complete`, 1 on a sanitized domain failure) and `fcode status [repo]` for the active generation only. Status exits 0 with `No active index.` when no pointer exists; malformed or unavailable active metadata exits 1 without fallback generation selection.
+Step 6 exposes `deeporra index [repo]` for one full local rebuild (exit 0 on `complete`, 1 on a sanitized domain failure) and `deeporra status [repo]` for the active generation only. Status exits 0 with `No active index.` when no pointer exists; malformed or unavailable active metadata exits 1 without fallback generation selection.
 
 ### State progression
 
@@ -83,7 +83,7 @@ destructive replacement began.
 
 ### State-machine purity
 
-`state_machine.py` imports only `fcode.contracts.enums` and standard-library typing helpers.
+`state_machine.py` imports only `deeporra.contracts.enums` and standard-library typing helpers.
 It does not import scanner, parser, chunker, embeddings, graph, storage, SQLite, Chroma,
 CLI, config, network, subprocess, or filesystem modules.
 
@@ -96,23 +96,23 @@ CLI, config, network, subprocess, or filesystem modules.
 **Steps:**
 1. If GitHub URL: clone to temp directory, then index
 2. If local path: validate it exists and is a directory
-3. Check if already indexed (`.fcode/index.db` exists)
+3. Check if already indexed (`.deeporra/index.db` exists)
 4. If already indexed: check for changes (content hash), offer reindex
-5. Create `.fcode/` directory if not exists
+5. Create `.deeporra/` directory if not exists
 6. Begin indexing pipeline
 
-**Source:** `fcode/cli/index_cmd.py` + `fcode/storage/`
+**Source:** `deeporra/cli/index_cmd.py` + `deeporra/storage/`
 
 ## 3. File Scanner
 
 **Owner:** Scanner/Parser Agent
-**File:** `fcode/scanner/file_scanner.py`
+**File:** `deeporra/scanner/file_scanner.py`
 
 **Input:** `RepoInput.repo_path` (absolute path string)
 
 **Preconditions:**
 - `repo_path` exists and is a directory
-- `.fcode/config.json` has been loaded or created
+- `.deeporra/config.json` has been loaded or created
 
 **Processing:**
 
@@ -122,7 +122,7 @@ CLI, config, network, subprocess, or filesystem modules.
 4. For each eligible file: check size <= 1MB (1,048,576 bytes). Skip if larger, log warning, increment `warning_count`.
 5. For each eligible file: detect binary via extension and content (null bytes in first 8KB). Skip binary files, log info.
 6. For each eligible file: run secret detection (Section 5).
-7. Skip `.fcode/` directory entirely.
+7. Skip `.deeporra/` directory entirely.
 8. Normalize all paths to repo-relative POSIX-style strings using `/`.
 9. Sort eligible paths by `(path.casefold(), path)` for deterministic ordering.
 10. For each eligible file, create `ScannedFile` record with all required fields.
@@ -147,12 +147,12 @@ CLI, config, network, subprocess, or filesystem modules.
 ## 4. Ignore Rules
 
 **Owner:** Scanner/Parser Agent
-**File:** `fcode/scanner/ignore_rules.py`
+**File:** `deeporra/scanner/ignore_rules.py`
 
-F Code respects:
+DeepOrra respects:
 - `.gitignore` patterns (parse and apply)
-- `.fcodeignore` patterns (if exists)
-- Hardcoded ignores: `.git/`, `node_modules/`, `__pycache__/`, `.venv/`, `venv/`, `.env`, `.env.*`, `*.pyc`, `*.pyo`, `.fcode/`
+- `.deeporraignore` patterns (if exists)
+- Hardcoded ignores: `.git/`, `node_modules/`, `__pycache__/`, `.venv/`, `venv/`, `.env`, `.env.*`, `*.pyc`, `*.pyo`, `.deeporra/`
 
 **Implementation:** Parse `.gitignore` using a simple pattern matcher (no external dependency). Apply patterns relative to the directory containing the ignore file.
 
@@ -172,7 +172,7 @@ The current build NEVER follows symlinks:
 **Error behavior:**
 - Symlink detected: skip, log warning, increment `warning_count`, continue.
 
-**Source:** `fcode/scanner/ignore_rules.py` and `fcode/scanner/file_scanner.py`
+**Source:** `deeporra/scanner/ignore_rules.py` and `deeporra/scanner/file_scanner.py`
 
 ## 5. Secret Handling
 
@@ -188,12 +188,12 @@ The current build NEVER follows symlinks:
 - Reports never include secret content
 - Indexing may still complete with warnings
 
-**Source:** `fcode/scanner/secret_detector.py`
+**Source:** `deeporra/scanner/secret_detector.py`
 
 ## 6. Python Parser
 
 **Owner:** Scanner/Parser Agent
-**File:** `fcode/parser/python_ast.py`
+**File:** `deeporra/parser/python_ast.py`
 
 **Current build: Python `ast` only.** Tree-sitter is NOT used in the first implementation slice.
 
@@ -232,12 +232,12 @@ The current build NEVER follows symlinks:
 
 **No tree-sitter usage:** Python `ast` is the only parser. No agent may introduce tree-sitter parsing into the first slice without a documentation change. Tree-sitter is reserved for later parser expansion (multi-language support).
 
-**Source:** `fcode/parser/python_ast.py`
+**Source:** `deeporra/parser/python_ast.py`
 
 ## 7. Symbol Extraction
 
 **Owner:** Scanner/Parser Agent
-**File:** `fcode/parser/symbol_extractor.py`
+**File:** `deeporra/parser/symbol_extractor.py`
 
 **Input:** Python AST (`ast.Module`), `file_id` (UUID)
 
@@ -276,11 +276,11 @@ Walk AST nodes and extract symbols in the following order:
 - Nested function (closure): extract as separate symbol with its own line range.
 - Duplicate name at same level: both stored (no dedup).
 
-**Source:** `fcode/parser/symbol_extractor.py`
+**Source:** `deeporra/parser/symbol_extractor.py`
 
 ## 8. Route Extraction
 
-> **Scope note:** FastAPI is not used to build F Code. Route detection is only for indexed target repositories that use FastAPI. It belongs to the Python parser/indexing pipeline, not to F Code's own runtime architecture.
+> **Scope note:** FastAPI is not used to build DeepOrra. Route detection is only for indexed target repositories that use FastAPI. It belongs to the Python parser/indexing pipeline, not to DeepOrra's own runtime architecture.
 
 **Detection pattern:**
 ```python
@@ -347,7 +347,7 @@ file_path
 line_number
 ```
 
-**Source:** `fcode/parser/route_detector.py`
+**Source:** `deeporra/parser/route_detector.py`
 
 ## 9. Import Extraction
 
@@ -401,12 +401,12 @@ line_number
 
 **Do not use alternate field names:** `module`, `names`.
 
-**Source:** `fcode/parser/import_extractor.py`
+**Source:** `deeporra/parser/import_extractor.py`
 
 ## 10. Code Graph Extraction
 
 **Owner:** Scanner/Parser Agent (first phase)
-**File:** `fcode/graph/graph_builder.py`
+**File:** `deeporra/graph/graph_builder.py`
 
 **Scope (first implementation slice):**
 
@@ -428,7 +428,7 @@ The graph builder in the first slice must NOT:
 - Implement NetworkX
 - Create visualization logic
 
-Graph traversal (`fcode/graph/graph_traverser.py`) and impact analysis (`fcode/graph/impact_analyzer.py`) are deferred to the Retrieval/Graph Agent in a later phase.
+Graph traversal (`deeporra/graph/graph_traverser.py`) and impact analysis (`deeporra/graph/impact_analyzer.py`) are deferred to the Retrieval/Graph Agent in a later phase.
 
 **Input:** `ParsedFile` list (all files in the repository)
 
@@ -491,7 +491,7 @@ Variable definitions are stored in `symbols` with `symbol_type = "variable"`. Du
 - If a target symbol for a `inherits` edge is not found in the repository: skip that edge.
 - Graph extraction never causes indexing failure.
 
-**Source:** `fcode/graph/graph_builder.py`
+**Source:** `deeporra/graph/graph_builder.py`
 
 ## 11. Chunking Strategy
 
@@ -537,7 +537,7 @@ Content before the first heading is treated as a single preamble section chunk.
 Recognized configuration files produce `config` chunks:
 - `*.json`, `*.toml`, `*.yaml`, `*.yml`, `*.ini`, `*.cfg`
 - `requirements.txt`, `requirements-*.txt`, `pyproject.toml`
-- `Makefile`, `Dockerfile`, `.gitignore`, `.fcodeignore`
+- `Makefile`, `Dockerfile`, `.gitignore`, `.deeporraignore`
 
 Config files of 100 lines or fewer produce one chunk. Larger config files are split into deterministic consecutive blocks of 100 lines with no overlap.
 
@@ -567,12 +567,12 @@ The chunker uses `ScannedFile.safe_content` (already redacted by the scanner) as
 - file_path (repo-relative, POSIX separators, copied from scanned file at chunk creation)
 - metadata (JSON), includes `has_secrets` and `parse_status`
 
-**Source:** `fcode/chunking/chunker.py`
+**Source:** `deeporra/chunking/chunker.py`
 
 ## 12. Embedding Strategy
 
 **Owner:** Chunking/Embeddings Agent
-**File:** `fcode/embeddings/encoder.py`
+**File:** `deeporra/embeddings/encoder.py`
 
 **Locked settings:**
 - Model: `sentence-transformers/all-MiniLM-L6-v2`
@@ -583,7 +583,7 @@ The chunker uses `ScannedFile.safe_content` (already redacted by the scanner) as
 **Preconditions:**
 - Model must already exist in the local cache (Sentence Transformers local-only loading mechanism — no hardcoded cache path inspected)
 - Indexing never downloads the model; use device=`cpu` and prohibit downloads/remote calls
-- `fcode doctor` reports whether the model is locally available
+- `deeporra doctor` reports whether the model is locally available
 - Missing model is a fatal preflight error (`embedding_model_unavailable`, exit code 1)
 - If local loading fails, do not begin persistent replacement, preserve the active previous index, do not automatically retry
 
@@ -627,12 +627,12 @@ The chunker uses `ScannedFile.safe_content` (already redacted by the scanner) as
 
 **Reindex after model change:** Full rebuild required. If the model name or dimension changes in config, the existing Chroma collection is deleted and recreated.
 
-**Source:** `fcode/embeddings/encoder.py`
+**Source:** `deeporra/embeddings/encoder.py`
 
 ## 13. Chroma Storage Strategy
 
 **Owner:** Storage Agent
-**File:** `fcode/storage/chroma_store.py`
+**File:** `deeporra/storage/chroma_store.py`
 
 **Collection:** `code_chunks`
 
@@ -657,12 +657,12 @@ The chunker uses `ScannedFile.safe_content` (already redacted by the scanner) as
 - Chroma write failure after SQLite commit: run cleanup path (see `04_DATA_MODEL.md` Phase C failure).
 - Chroma open failure: fatal preflight error, preserve previous index.
 
-**Source:** `fcode/storage/chroma_store.py`
+**Source:** `deeporra/storage/chroma_store.py`
 
 ## 14. SQLite Metadata Strategy
 
 **Owner:** Storage Agent
-**File:** `fcode/storage/sqlite_store.py`
+**File:** `deeporra/storage/sqlite_store.py`
 
 **Write process (full rebuild, inside one transaction):**
 1. Delete previous rows for the repository: `chunks`, `symbols`, `files`, `code_nodes`, `code_edges`, `repo_reports`, `tool_call_logs`.
@@ -710,12 +710,12 @@ CREATE VIRTUAL TABLE IF NOT EXISTS symbols_fts USING fts5(
 **FTS5 failure (other than unavailability):**
 - Set `status = 'error'`, run cleanup path. Do not silently continue.
 
-**Source:** `fcode/storage/sqlite_store.py` and `fcode/storage/fts_store.py`
+**Source:** `deeporra/storage/sqlite_store.py` and `deeporra/storage/fts_store.py`
 
 ### Graph Store
 
 **Owner:** Storage Agent
-**File:** `fcode/storage/graph_store.py`
+**File:** `deeporra/storage/graph_store.py`
 
 **Responsibility:** Persist and read graph nodes and edges in SQLite tables `code_nodes` and `code_edges`.
 
@@ -728,7 +728,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS symbols_fts USING fts5(
 2. Query edges by `repo_id`, `source_node_id`, or `target_node_id`.
 3. Recursive CTE for 2-hop traversal (deferred to `graph_traverser.py` in later phase).
 
-**Source:** `fcode/storage/graph_store.py`
+**Source:** `deeporra/storage/graph_store.py`
 
 ## 15. Keyword Search Strategy
 
@@ -781,7 +781,7 @@ keyword_score =
   0.0 otherwise
 ```
 
-**Source:** `fcode/storage/fts_store.py`
+**Source:** `deeporra/storage/fts_store.py`
 
 ## 16. Graph Traversal Strategy
 
@@ -807,7 +807,7 @@ WITH RECURSIVE connected AS (
 SELECT DISTINCT node_id FROM connected;
 ```
 
-**Source:** `fcode/graph/graph_traverser.py`
+**Source:** `deeporra/graph/graph_traverser.py`
 
 ## 17. Hybrid Retrieval Strategy
 
@@ -820,7 +820,7 @@ SELECT DISTINCT node_id FROM connected;
 5. **Graph expansion:** For each top result, find related files via graph
 6. **Combine:** Merge all results, deduplicate, rank by relevance
 
-**Source:** `fcode/retrieval/hybrid_ranker.py`
+**Source:** `deeporra/retrieval/hybrid_ranker.py`
 
 ## 18. Retrieval Ranking
 
@@ -923,7 +923,7 @@ metadata_score =
 3. Prefer shorter files (more focused)
 4. Prefer files with more graph edges (more connected)
 
-**Source:** `fcode/retrieval/hybrid_ranker.py`
+**Source:** `deeporra/retrieval/hybrid_ranker.py`
 
 ## 19. Evidence Format
 
@@ -944,11 +944,11 @@ Every retrieval result must include:
 }
 ```
 
-**Source:** `fcode/retrieval/evidence.py`
+**Source:** `deeporra/retrieval/evidence.py`
 
 ## 20. Reindexing Rules
 
-**Current build behavior:** `fcode index <repo_path>` always performs a full rebuild. No `--force` flag exists. No incremental reindexing exists.
+**Current build behavior:** `deeporra index <repo_path>` always performs a full rebuild. No `--force` flag exists. No incremental reindexing exists.
 
 **Full rebuild state machine:** See `04_DATA_MODEL.md` Section 22 for the complete three-phase rebuild (Phase A: Preflight, Phase B: Build in Memory, Phase C: Persistent Replacement).
 
@@ -960,7 +960,7 @@ Every retrieval result must include:
 
 **Content hashes:** Stored with files for change detection and stale index warnings. Content hashes do not affect the rebuild process in the current build (no incremental mode).
 
-**Source:** `fcode/indexing/index_service.py` + `fcode/storage/`
+**Source:** `deeporra/indexing/index_service.py` + `deeporra/storage/`
 
 ## 21. Failure Handling
 
@@ -1024,7 +1024,7 @@ Rules:
 | FTS count mismatch | Set `status='error'`, code `verification_failed` |
 | Disk full | Set `status='error'`, code `sqlite_failure` or `chroma_failure` |
 
-**Source:** `fcode/indexing/index_service.py`
+**Source:** `deeporra/indexing/index_service.py`
 
 ## 22. Performance Limits
 
@@ -1040,7 +1040,7 @@ Rules:
 | Embedding batch size | 100 | Fixed in current build |
 
 **Counting rules:**
-- Ignored files (by `.gitignore`, hardcoded ignores, `.fcodeignore`) do not count.
+- Ignored files (by `.gitignore`, hardcoded ignores, `.deeporraignore`) do not count.
 - Symlinks do not count.
 - Binary files do not count toward eligible file count or content size.
 - `.env` family files do not count.
@@ -1066,4 +1066,4 @@ All scanning, parsing, chunking, and persistence follows deterministic ordering:
 
 IDs remain UUIDs and are not expected to be identical across rebuilds. Record ordering and semantic output must be deterministic even when IDs differ.
 
-**Repeated indexing test:** Two runs of `fcode index` on the same repository with identical content must produce identical chunk content, identical symbol records, identical graph structure, and identical embedding vectors (same model, same input). The only difference will be UUIDs and timestamps.
+**Repeated indexing test:** Two runs of `deeporra index` on the same repository with identical content must produce identical chunk content, identical symbol records, identical graph structure, and identical embedding vectors (same model, same input). The only difference will be UUIDs and timestamps.

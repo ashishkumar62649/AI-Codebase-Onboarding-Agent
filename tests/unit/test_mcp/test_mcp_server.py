@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from fcode.mcp_server import create_mcp_server
-from fcode.querying import (
+from deeporra.mcp_server import create_mcp_server
+from deeporra.querying import (
     CodeSearchResult,
     ImpactAnalysis,
     QueryValidationError,
@@ -42,7 +42,7 @@ EXPECTED_TOOLS = [
 
 def test_server_creation():
     server = _make_server()
-    assert server.name == "fcode-mcp"
+    assert server.name == "DeepOrra-mcp"
     assert server.instructions is not None
 
 
@@ -136,7 +136,7 @@ def test_find_existing_implementation_schema():
 
 
 def test_repository_summary_delegates(monkeypatch):
-    from fcode.querying import RepositorySummary
+    from deeporra.querying import RepositorySummary
     fake_summary = RepositorySummary(
         repository_root="/fake", active_generation_id="gen-1",
         index_status="complete", indexed_at="2024-01-01T00:00:00",
@@ -148,7 +148,7 @@ def test_repository_summary_delegates(monkeypatch):
     class _FakeQS:
         def get_repository_summary(self):
             return fake_summary
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", lambda root: _FakeQS())
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", lambda root: _FakeQS())
     server = _make_server()
     result_str = server._tool_manager._tools["repository_summary"].fn(repository_root="/fake")
     data = json.loads(result_str)
@@ -167,7 +167,7 @@ def test_search_code_text_delegates(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode): return fake_results
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["search_code"].fn(
         repository_root="/fake", query="greet", mode="text", limit=10)
@@ -182,7 +182,7 @@ def test_semantic_unavailable_error_propagates(monkeypatch):
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode):
             raise QueryValidationError("Semantic search is unavailable: the embedding model could not be loaded.")
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     with pytest.raises(QueryValidationError, match="Semantic search is unavailable"):
         server._tool_manager._tools["search_code"].fn(
@@ -199,7 +199,7 @@ def test_hybrid_degraded_text_only(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode): return fake_results
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["search_code"].fn(
         repository_root="/fake", query="greet", mode="hybrid", limit=10)
@@ -216,7 +216,7 @@ def test_find_symbols_delegates(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def find_symbols(self, query, exact, limit): return fake_symbols
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["find_symbols"].fn(
         repository_root="/fake", query="add", exact=False, limit=20)
@@ -233,7 +233,7 @@ def test_find_routes_delegates(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def find_routes(self, method, path_query, handler_query, limit): return fake_routes
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["find_routes"].fn(
         repository_root="/fake", method="GET", path_query="", handler_query="", limit=50)
@@ -250,7 +250,7 @@ def test_get_related_code_delegates(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def get_related(self, semantic_key, direction, edge_types, depth, limit): return fake_related
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["get_related_code"].fn(
         repository_root="/fake", semantic_key="n1", direction="outgoing", edge_types="", depth=1, limit=100)
@@ -266,7 +266,7 @@ def test_analyze_change_impact_delegates(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def analyze_change_impact(self, semantic_key, limit): return fake_impact
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["analyze_change_impact"].fn(
         repository_root="/fake", semantic_key="n1", limit=100)
@@ -289,7 +289,7 @@ def test_find_existing_implementation_composes(monkeypatch):
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode): return fake_code
         def find_symbols(self, query, exact, limit): return fake_symbols
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["find_existing_implementation"].fn(
         repository_root="/fake", query="greet", limit=10)
@@ -303,7 +303,7 @@ def test_missing_index_error_propagates(monkeypatch):
         def __init__(self, root): self.root = root
         def get_repository_summary(self):
             raise RepositoryNotIndexedError("Repository at /fake has no active index.")
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     with pytest.raises(RepositoryNotIndexedError):
         server._tool_manager._tools["repository_summary"].fn(repository_root="/fake")
@@ -314,7 +314,7 @@ def test_invalid_query_error_propagates(monkeypatch):
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode):
             raise QueryValidationError("Query must not be blank.")
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     with pytest.raises(QueryValidationError):
         server._tool_manager._tools["search_code"].fn(
@@ -326,7 +326,7 @@ def test_invalid_limit_error_propagates(monkeypatch):
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode):
             raise QueryValidationError("Limit must be a positive integer.")
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     with pytest.raises(QueryValidationError):
         server._tool_manager._tools["search_code"].fn(
@@ -352,7 +352,7 @@ def test_hybrid_search_delegates(monkeypatch):
         def search_code(self, query, limit, mode):
             assert mode == "hybrid"
             return fake_results
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["hybrid_search"].fn(
         repository_root="/fake", query="greet", limit=10)
@@ -371,7 +371,7 @@ def test_hybrid_search_passes_params(monkeypatch):
             captured["limit"] = limit
             captured["mode"] = mode
             return []
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     server._tool_manager._tools["hybrid_search"].fn(
         repository_root="/repo", query="find_x", limit=25)
@@ -418,7 +418,7 @@ def test_hybrid_search_normal_results_serialize(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode): return fake_results
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["hybrid_search"].fn(
         repository_root="/fake", query="greet", limit=10)
@@ -445,7 +445,7 @@ def test_hybrid_search_degraded_text_only_no_semantic(monkeypatch):
     class _FakeQS:
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode): return fake_results
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     result_str = server._tool_manager._tools["hybrid_search"].fn(
         repository_root="/fake", query="util", limit=10)
@@ -459,7 +459,7 @@ def test_hybrid_search_qs_error_propagates(monkeypatch):
         def __init__(self, root): self.root = root
         def search_code(self, query, limit, mode):
             raise QueryValidationError("Semantic search is unavailable.")
-    monkeypatch.setattr("fcode.mcp_server.server.QueryService", _FakeQS)
+    monkeypatch.setattr("deeporra.mcp_server.server.QueryService", _FakeQS)
     server = _make_server()
     with pytest.raises(QueryValidationError):
         server._tool_manager._tools["hybrid_search"].fn(

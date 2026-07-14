@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fcode.contracts import (
+from deeporra.contracts import (
     ChunkType,
     CodeChunk,
     Confidence,
@@ -23,7 +23,7 @@ from fcode.contracts import (
     EmbeddingMetadata,
     EmbeddingRecord,
     ErrorCode,
-    FCodeConfig,
+    DeepOrraConfig,
     GraphBuildResult,
     GraphEdgeInput,
     GraphNodeInput,
@@ -42,10 +42,10 @@ from fcode.contracts import (
     SymbolType,
     HttpMethod,
 )
-from fcode.embeddings import EXPECTED_DIMENSION
-from fcode.indexing.index_service import IndexService
-from fcode.storage.fts_store import FTSStore
-from fcode.storage.sqlite_store import SQLiteStore
+from deeporra.embeddings import EXPECTED_DIMENSION
+from deeporra.indexing.index_service import IndexService
+from deeporra.storage.fts_store import FTSStore
+from deeporra.storage.sqlite_store import SQLiteStore
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -417,34 +417,34 @@ class TestMissingDeps:
     def test_missing_sqlite_raises(self):
         s = _make_step4_svc(sqlite_store=None)
         with pytest.raises(TypeError, match="sqlite_store"):
-            s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
 
     def test_missing_fts_raises(self):
         s = _make_step4_svc(fts_store=None)
         with pytest.raises(TypeError, match="fts_store"):
-            s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
 
     def test_missing_encoder_raises(self):
         s = _make_step4_svc(encoder=None)
         with pytest.raises(TypeError, match="encoder"):
-            s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
 
     def test_missing_graph_builder_raises(self):
         s = _make_step4_svc(graph_builder=None)
         with pytest.raises(TypeError, match="graph_builder"):
-            s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
 
     def test_dep_failure_before_scanner(self):
         s = _make_step4_svc()
         s._scanner = None  # invalid state — _run_step2 catches BaseException
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
 
     def test_no_state_transition_on_missing_dep(self):
         sql = _FakeSQLite()
         s = _make_step4_svc(sqlite_store=None)
         try:
-            s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         except TypeError:
             pass
         assert sql.calls == []
@@ -458,7 +458,7 @@ class TestEarlierFailuresPropagate:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path=""))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path=""))
         assert r.run_result.state == IndexState.ERROR
         assert r.persistent_replacement_started is False
         assert sql.calls == []
@@ -470,7 +470,7 @@ class TestEarlierFailuresPropagate:
         scanner = MagicMock()
         scanner.scan.side_effect = RuntimeError("scan fail")
         s = _make_step4_svc(scanner=scanner, sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         assert r.persistent_replacement_started is False
         assert sql.calls == []
@@ -485,7 +485,7 @@ class TestEarlierFailuresPropagate:
         parser.parse.side_effect = ValueError("parse fail")
         s = _make_step4_svc(scanner=scanner, parser=parser,
                             sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         assert r.persistent_replacement_started is False
         assert sql.calls == []
@@ -496,7 +496,7 @@ class TestEarlierFailuresPropagate:
         chunker = MagicMock()
         chunker.chunk.side_effect = RuntimeError("chunk fail")
         s = _make_step4_svc(chunker=chunker, sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         assert r.persistent_replacement_started is False
 
@@ -506,7 +506,7 @@ class TestEarlierFailuresPropagate:
         encoder = MagicMock()
         encoder.encode.side_effect = RuntimeError("embed fail")
         s = _make_step4_svc(encoder=encoder, sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         assert not r.persistent_replacement_started
 
@@ -516,7 +516,7 @@ class TestEarlierFailuresPropagate:
         gb = MagicMock()
         gb.build.side_effect = RuntimeError("graph fail")
         s = _make_step4_svc(graph_builder=gb, sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         assert not r.persistent_replacement_started
 
@@ -529,12 +529,12 @@ class TestStateProgression:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.STORING
 
     def test_exact_success_history(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.state_history == (
             IndexState.PENDING,
             IndexState.SCANNING,
@@ -547,32 +547,32 @@ class TestStateProgression:
 
     def test_final_state_storing(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.STORING
 
     def test_phase_persist(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.phase == IndexPhase.PERSIST
 
     def test_completed_phase_graph(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.completed_phase == IndexPhase.GRAPH
 
     def test_replacement_flag_true(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.persistent_replacement_started is True
 
     def test_nonterminal(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert not r.run_result.state == IndexState.COMPLETE
 
     def test_complete_never_reached(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert IndexState.COMPLETE not in r.state_history
 
 
@@ -584,7 +584,7 @@ class TestSuccessPath:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.graph_result is not None
         assert r.embedding_result is not None
         # verify store was called (symbols not present in default test data)
@@ -597,31 +597,31 @@ class TestSuccessPath:
         fts = _FakeFTS()
         result = _make_step4_svc(
             sqlite_store=sql, fts_store=fts
-        ).build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        ).build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.STORING
         assert sql.calls.index(next(c for c in sql.calls if c.startswith("update_index_status"))) < sql.calls.index("commit_transaction()")
         assert fts.calls.index("rebuild_all(conn)") < fts.calls.index("count_chunks_fts(conn)")
 
     def test_fatal_diagnostics_empty(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         fatal = [d for d in r.run_result.diagnostics
                  if d.severity == DiagnosticSeverity.ERROR and not d.recoverable]
         assert len(fatal) == 0
 
     def test_compat_errors_empty(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.errors == []
 
     def test_counts_valid(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         r.run_result.counts.validate()
 
     def test_run_result_validates(self):
         s = _make_step4_svc()
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         r.run_result.validate()
 
 
@@ -669,7 +669,7 @@ class TestRealStoreReadback:
             encoder=encoder, graph_builder=gb,
             sqlite_store=sqlite, fts_store=fts,
         )
-        r = svc.build_through_sqlite_fts(FCodeConfig(repo_path=temp_dir,
+        r = svc.build_through_sqlite_fts(DeepOrraConfig(repo_path=temp_dir,
                                                        max_files=10000,
                                                        max_size_bytes=52428800))
         return r, sqlite, fts
@@ -783,7 +783,7 @@ class TestPersistenceFailures:
     ):
         if boundary == "sqlite":
             monkeypatch.setattr(
-                "fcode.indexing.index_service.run_step4_persistence",
+                "deeporra.indexing.index_service.run_step4_persistence",
                 lambda **_kwargs: (_ for _ in ()).throw(control),
             )
         else:
@@ -791,12 +791,12 @@ class TestPersistenceFailures:
             fts.rebuild_all = MagicMock(side_effect=control)
             service = _make_step4_svc(fts_store=fts)
             with pytest.raises(type(control)) as raised:
-                service.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+                service.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
             assert raised.value is control
             return
 
         with pytest.raises(type(control)) as raised:
-            _make_step4_svc().build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            _make_step4_svc().build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert raised.value is control
 
     @pytest.mark.parametrize(
@@ -825,7 +825,7 @@ class TestPersistenceFailures:
             parser=parser,
             sqlite_store=sql,
             fts_store=_FakeFTS(),
-        ).build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        ).build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         assert result.run_result.phase == IndexPhase.PERSIST
         assert result.completed_phase == IndexPhase.GRAPH
@@ -841,7 +841,7 @@ class TestPersistenceFailures:
         sql = _FakeSQLite()
         result = _make_step4_svc(
             sqlite_store=sql, fts_store=_FailingFTS()
-        ).build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        ).build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert result.run_result.state == IndexState.ERROR
         assert "rollback_transaction()" in sql.calls
         assert "commit_transaction()" not in sql.calls
@@ -856,12 +856,12 @@ class TestPersistenceFailures:
         with pytest.raises(interrupt):
             _make_step4_svc(
                 sqlite_store=sql, fts_store=fts
-            ).build_through_sqlite_fts(FCodeConfig(repo_path="."))
+            ).build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
     def test_failure_after_storing_transition(self):
         sql = _FatalSQLite(fail_on="insert_symbols")
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.ERROR
         assert r.run_result.phase == IndexPhase.PERSIST
         assert r.completed_phase == IndexPhase.GRAPH
@@ -878,7 +878,7 @@ class TestPersistenceFailures:
         sql = _FatalSQLite(fail_on="insert_files")
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         history = list(r.state_history)
         assert IndexState.STORING in history
         assert IndexState.ERROR in history
@@ -888,7 +888,7 @@ class TestPersistenceFailures:
         sql = _FatalSQLite(fail_on="insert_files")
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.persistent_replacement_started is True
 
     def test_artifacts_retained_on_failure(self):
@@ -897,7 +897,7 @@ class TestPersistenceFailures:
         scanner = MagicMock()
         scanner.scan.return_value = _make_pending_scan_result()
         s = _make_step4_svc(scanner=scanner, sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.graph_result is not None
         assert r.embedding_result is not None
         assert len(r.chunks) > 0
@@ -908,14 +908,14 @@ class TestPersistenceFailures:
         sql = _FatalSQLite(fail_on="insert_files")
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert IndexState.COMPLETE not in r.state_history
 
     def test_exception_absent_from_diagnostic(self):
         sql = _FatalSQLite(fail_on="insert_files")
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         msg = r.run_result.diagnostics[0].message
         assert "RuntimeError" not in msg
         assert "Stacktrace" not in msg
@@ -955,7 +955,7 @@ class TestPersistenceFailures:
                 encoder=encoder, graph_builder=gb,
                 sqlite_store=sqlite, fts_store=fts,
             )
-            r = svc.build_through_sqlite_fts(FCodeConfig(repo_path=tmp,
+            r = svc.build_through_sqlite_fts(DeepOrraConfig(repo_path=tmp,
                                                            max_files=10000,
                                                            max_size_bytes=52428800))
             assert r.run_result.state == IndexState.ERROR
@@ -974,7 +974,7 @@ class TestRegressionIsolation:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_chunking(FCodeConfig(repo_path="."))
+        r = s.build_through_chunking(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.CHUNKING
         assert sql.calls == []
         assert fts.calls == []
@@ -983,7 +983,7 @@ class TestRegressionIsolation:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_graphing(FCodeConfig(repo_path="."))
+        r = s.build_through_graphing(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.GRAPHING
         assert not r.persistent_replacement_started
         # No calls to SQLite or FTS from Step 3
@@ -994,34 +994,34 @@ class TestRegressionIsolation:
         sql = _FatalSQLite(fail_on="insert_files")
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r1 = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r1 = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r1.run_result.state == IndexState.ERROR
 
         sql2 = _FakeSQLite()
         s._sqlite_store = sql2
         s._fts_store = fts
-        r2 = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r2 = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r2.run_result.state == IndexState.STORING
 
     def test_success_does_not_poison_step2(self):
         s = _make_step4_svc()
-        r1 = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r1 = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r1.run_result.state == IndexState.STORING
         # same instance, fresh attempt for step2
-        r2 = s.build_through_chunking(FCodeConfig(repo_path="."))
+        r2 = s.build_through_chunking(DeepOrraConfig(repo_path="."))
         assert r2.run_result.state == IndexState.CHUNKING
 
     def test_fresh_state_per_attempt(self):
         s = _make_step4_svc()
-        r1 = s.build_through_chunking(FCodeConfig(repo_path="."))
-        r2 = s.build_through_chunking(FCodeConfig(repo_path="."))
+        r1 = s.build_through_chunking(DeepOrraConfig(repo_path="."))
+        r2 = s.build_through_chunking(DeepOrraConfig(repo_path="."))
         assert r1.state_history == r2.state_history  # same inputs → same history
 
     def test_deterministic_storage_call_order(self):
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         assert r.run_result.state == IndexState.STORING
 
 
@@ -1033,7 +1033,7 @@ class TestNoLaterStage:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         for c in sql.calls:
             assert "chroma" not in c.lower()
             assert "vector" not in c.lower()
@@ -1042,7 +1042,7 @@ class TestNoLaterStage:
         sql = _FakeSQLite()
         fts = _FakeFTS()
         s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(FCodeConfig(repo_path="."))
+        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
         for c in sql.calls:
             assert "code_node" not in c.lower()
             assert "graph_node" not in c.lower()

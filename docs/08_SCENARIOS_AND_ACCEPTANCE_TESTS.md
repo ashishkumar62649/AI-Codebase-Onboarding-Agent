@@ -1,16 +1,16 @@
-# 08_SCENARIOS_AND_ACCEPTANCE_TESTS.md — F Code Scenarios and Acceptance Tests
+# 08_SCENARIOS_AND_ACCEPTANCE_TESTS.md — DeepOrra Scenarios and Acceptance Tests
 
 ## 1. Purpose
 
-This document stress-tests the F Code product before coding. It defines scenarios that F Code must pass to prove it is useful. This is one of the most important documents.
+This document stress-tests the DeepOrra product before coding. It defines scenarios that DeepOrra must pass to prove it is useful. This is one of the most important documents.
 
 ## 2. Product Success Hypothesis
 
-"F Code is successful if it helps a coding agent find and reuse existing code before creating duplicate code."
+"DeepOrra is successful if it helps a coding agent find and reuse existing code before creating duplicate code."
 
 ## 3. Product Failure Hypothesis
 
-"F Code fails if it cannot identify existing reusable code, suggests new files when existing files should be reused, or provides evidence-free answers."
+"DeepOrra fails if it cannot identify existing reusable code, suggests new files when existing files should be reused, or provides evidence-free answers."
 
 ## 4. Scenario Format
 
@@ -18,7 +18,7 @@ Each scenario includes:
 - **Scenario ID:** Unique identifier
 - **User/Agent Input:** What the user or agent asks
 - **Starting Condition:** Repository state before the test
-- **Expected F Code Behavior:** What F Code should do
+- **Expected DeepOrra Behavior:** What DeepOrra should do
 - **Expected Output:** Specific tool/dashboard output
 - **Required Evidence:** File paths, symbols, line ranges
 - **Pass Condition:** Measurable success criteria
@@ -234,7 +234,7 @@ This repository is used for all scenarios unless otherwise noted.
 
 **Agent Task:** "Add email validation to registration"
 **Repository Condition:** `validate_email` already exists in `app/utils/validators.py`
-**Expected Behavior:** F Code suggests reusing existing function
+**Expected Behavior:** DeepOrra suggests reusing existing function
 **Expected Output:** `check_existing_implementation` returns existing match; `plan_minimal_change` recommends modifying existing file
 
 **Pass Condition:** Agent is told to reuse existing code, not create new file
@@ -246,7 +246,7 @@ This repository is used for all scenarios unless otherwise noted.
 
 **Agent Task:** "Create a function to format currency"
 **Repository Condition:** `format_currency` already exists in `app/utils/formatters.py`
-**Expected Behavior:** F Code finds existing function
+**Expected Behavior:** DeepOrra finds existing function
 **Expected Output:** `check_existing_implementation` returns match
 
 **Pass Condition:** Existing function is found
@@ -258,7 +258,7 @@ This repository is used for all scenarios unless otherwise noted.
 
 **Agent Task:** "Add input sanitization"
 **Repository Condition:** `sanitize_input` exists in `app/utils/security.py` but named differently
-**Expected Behavior:** F Code finds related function via semantic search
+**Expected Behavior:** DeepOrra finds related function via semantic search
 **Expected Output:** `search_code` returns `sanitize_input` as top result
 
 **Pass Condition:** Semantic search finds related function
@@ -360,7 +360,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-001: Valid Small Python Repository
 
 **Fixture:** Repository with 3 Python files (app.py, utils.py, test_app.py), no secrets, no symlinks
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** repositories=1, files=3, symbols≥3, chunks≥3, code_nodes≥3, code_edges≥1, index_status=1 (status=complete)
@@ -374,7 +374,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-002: Empty Repository
 
 **Fixture:** Empty directory (no files)
-**Command:** `fcode index /path/to/empty_repo`
+**Command:** `deeporra index /path/to/empty_repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** repositories=1, files=0, symbols=0, chunks=0, code_nodes=0, code_edges=0, index_status=1 (status=complete, total_files=0)
@@ -388,7 +388,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-003: Repository with No Python Files (Markdown and Config Only)
 
 **Fixture:** Repository with only README.md and config.json
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** repositories=1, files=2, symbols=0, chunks≥2 (readme_section from README.md, config from config.json), code_nodes≥2 (file nodes), code_edges=0, index_status=1 (status=complete, total_chunks≥2)
@@ -402,7 +402,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-004: Invalid Repository Path
 
 **Fixture:** Non-existent path `/tmp/nonexistent_repo`
-**Command:** `fcode index /tmp/nonexistent_repo`
+**Command:** `deeporra index /tmp/nonexistent_repo`
 **Expected status:** N/A (indexing never starts)
 **Expected exit code:** 2
 **Expected SQLite rows:** no changes
@@ -416,7 +416,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-005: Maximum File Count Rejection
 
 **Fixture:** Repository with 10,001 eligible Python files
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** N/A (aborts during preflight)
 **Expected exit code:** 1
 **Expected SQLite rows:** no changes (preflight fails before persistent replacement)
@@ -430,7 +430,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-006: Maximum Total Size Rejection
 
 **Fixture:** Repository with 100 Python files totaling 51 MB
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** N/A (aborts during preflight)
 **Expected exit code:** 1
 **Expected SQLite rows:** no changes
@@ -444,7 +444,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-007: Oversized Individual File
 
 **Fixture:** Repository with one 2 MB Python file and one 1 KB Python file
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (only the 1 KB file), symbols≥1, chunks≥1
@@ -458,7 +458,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-008: Binary File
 
 **Fixture:** Repository with one .py file and one .png file
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (only the .py file), symbols≥1
@@ -472,7 +472,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-009: .env File
 
 **Fixture:** Repository with one .env file containing `API_KEY=sk_test_123` and one app.py
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (app.py only), .env not present
@@ -486,7 +486,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-010: Secret-Bearing File
 
 **Fixture:** Repository with config.py containing `API_KEY=sk_test_123` and utils.py with no secrets
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=2, config.py has `has_secrets=1`, utils.py has `has_secrets=0`
@@ -500,7 +500,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-011: Unreadable File
 
 **Fixture:** Repository with one readable app.py and one unreadable file (permission denied)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (only readable file), warning_count≥1
@@ -514,7 +514,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-012: Internal Symlink
 
 **Fixture:** Repository with app.py and a symlink `link.py → app.py` (both inside repo)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (only app.py, symlink skipped), symbols≥1
@@ -528,7 +528,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-013: External Symlink
 
 **Fixture:** Repository with app.py and a symlink `ext.py → /tmp/external.py` (points outside repo)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (only app.py, symlink skipped)
@@ -542,7 +542,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-014: Symlinked Directory
 
 **Fixture:** Repository with src/app.py and a symlinked directory `linked/ → src/`
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1 (only src/app.py, linked/ directory not recursed)
@@ -556,7 +556,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-015: Python Syntax Error
 
 **Fixture:** Repository with broken.py (syntax error) and valid.py
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=2, broken.py has `parse_status='error'` and `parse_error` is non-NULL (≤500 chars), valid.py has `parse_status='parsed'`, symbols from valid.py only, warning_count≥1
@@ -570,7 +570,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-016: Duplicate Symbols
 
 **Fixture:** Repository with two functions named `process` in the same file (different line ranges)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols=2 (both `process` functions stored separately with different UUIDs, different start_line/end_line)
@@ -584,7 +584,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-017: Nested Function
 
 **Fixture:** Repository with a function containing a nested closure
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols≥2 (outer function + nested function, each with own UUID and line range)
@@ -598,7 +598,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-018: Async Function
 
 **Fixture:** Repository with an `async def fetch_data()` function
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols≥1 (symbol_type=`function`, name=`fetch_data`)
@@ -612,7 +612,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-019: FastAPI Route Without Importing FastAPI
 
 **Fixture:** Repository with a file containing `@app.get("/users")` decorator but no FastAPI import
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols≥1 (route detected), code_edges≥1 (handles_route edge)
@@ -626,7 +626,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-020: Pytest Test Extraction
 
 **Fixture:** Repository with tests/test_utils.py containing `def test_add():` and src/utils.py containing `def add(a, b):`
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols≥2 (test_add + add), code_edges≥1 (tests edge from test_add → add if name matching)
@@ -640,7 +640,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-021: Missing Local Embedding Model
 
 **Fixture:** Repository with Python files; sentence-transformers model not in local cache
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** N/A (aborts during preflight)
 **Expected exit code:** 1
 **Expected SQLite rows:** no changes (preflight fails)
@@ -654,7 +654,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-022: One Chunk Embedding Failure
 
 **Fixture:** Repository with 10 Python files; one file triggers encoding failure (e.g., extremely long content)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** chunks=10, symbols≥10
@@ -668,7 +668,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-023: All Embeddings Fail
 
 **Fixture:** Repository with Python files; embedding model loaded but all chunks trigger encoding failure
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `error`
 **Expected exit code:** 1
 **Expected SQLite rows:** index_status.status=`error`
@@ -682,7 +682,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-024: SQLite Transaction Failure
 
 **Fixture:** Repository with Python files; SQLite database file is read-only
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `error`
 **Expected exit code:** 1
 **Expected SQLite rows:** no changes (transaction fails)
@@ -696,7 +696,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-025: Chroma Failure After SQLite Commit
 
 **Fixture:** Repository with Python files; SQLite succeeds but Chroma write fails
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `error`
 **Expected exit code:** 1
 **Expected SQLite rows:** index_status.status=`error`, newly inserted data cleaned up
@@ -710,7 +710,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-026: FTS Unavailable Fallback
 
 **Fixture:** Repository with Python files; SQLite compiled without FTS5 support
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** index_status.active_search_mode=`like_fallback`, no FTS5 virtual tables created
@@ -724,7 +724,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-027: FTS Population Failure
 
 **Fixture:** Repository with Python files; FTS5 available but rebuild command fails
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `error`
 **Expected exit code:** 1
 **Expected SQLite rows:** index_status.status=`error`
@@ -738,7 +738,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-028: Record-Count Mismatch
 
 **Fixture:** Repository with Python files; simulated count mismatch after Phase C (e.g., FTS count ≠ chunks count)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `error`
 **Expected exit code:** 1
 **Expected SQLite rows:** index_status.status=`error`
@@ -751,8 +751,8 @@ Every scenario below defines: fixture, command/function, expected status, expect
 
 ### SC-IND-029: Existing Index Replaced Successfully
 
-**Fixture:** Repository already indexed with status=complete; re-run `fcode index`
-**Command:** `fcode index /path/to/repo`
+**Fixture:** Repository already indexed with status=complete; re-run `deeporra index`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** all previous data deleted, new data inserted, index_status.status=`complete`
@@ -766,7 +766,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-030: Failed Replacement Leaves Error State
 
 **Fixture:** Repository already indexed; simulate Chroma failure during re-index
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `error`
 **Expected exit code:** 1
 **Expected SQLite rows:** index_status.status=`error`, error_message non-NULL (≤500 chars), completed_at set
@@ -779,8 +779,8 @@ Every scenario below defines: fixture, command/function, expected status, expect
 
 ### SC-IND-031: Deterministic Repeated Indexing
 
-**Fixture:** Repository with 5 Python files; run `fcode index` twice
-**Command:** `fcode index /path/to/repo` (run twice)
+**Fixture:** Repository with 5 Python files; run `deeporra index` twice
+**Command:** `deeporra index /path/to/repo` (run twice)
 **Expected status:** `complete` both times
 **Expected exit code:** 0 both times
 **Expected SQLite rows:** second run produces identical file records, symbol records, chunk content, graph structure (UUIDs differ, ordering and content match)
@@ -794,7 +794,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-032: Deferred CLI Commands Exit with Code 2
 
 **Fixture:** Any indexed repository
-**Command:** `fcode dashboard`, `fcode mcp --repo /path/to/repo`, `fcode setup cursor --repo /path/to/repo`
+**Command:** `deeporra dashboard`, `deeporra mcp --repo /path/to/repo`, `deeporra setup cursor --repo /path/to/repo`
 **Expected status:** N/A (no indexing)
 **Expected exit code:** 2 for all three commands
 **Expected SQLite rows:** no changes
@@ -808,7 +808,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-033: Import Graph Metadata Reconstruction
 
 **Fixture:** Repository with app.py importing `from utils import validate_email, format_date` at line 5, and `import os` at line 1
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** code_edges≥2 (imports edges), code_edges.metadata contains `module_name`, `imported_names`, `alias`, `line_number` for each import
@@ -823,7 +823,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-034: Duplicate Graph Edges with Different Evidence Locations
 
 **Fixture:** Repository with two files both importing `os` at different lines
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** code_edges≥2 (both imports edges stored separately, each with different source_file and metadata.line_number), no UNIQUE constraint violation
@@ -837,7 +837,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-035: Route Symbol Persistence
 
 **Fixture:** Repository with `@app.get("/users")` in `routes.py` with handler `list_users`
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols≥1 with symbol_type='route', name='GET /users', qualified_name='routes.list_users', metadata contains http_method='GET', route_path='/users', handler_function='routes.list_users'; code_nodes≥1 with node_id format `route:GET:/users:routes.py:<line_number>`; code_edges≥1 with relation='handles_route'
@@ -851,7 +851,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-036: Variable Symbol Without Graph Node
 
 **Fixture:** Repository with `DEBUG = True` at module level
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** symbols≥1 with symbol_type='variable', name='DEBUG'; code_nodes=0 with node_type='variable' (no variable graph nodes in first slice)
@@ -865,7 +865,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-037: Markdown/Config-Only Repository Produces Vectors
 
 **Fixture:** Repository with README.md (# Title, ## Section) and settings.toml (50 lines)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=2, chunks≥2 (readme_section chunks for each heading, config chunk for settings.toml)
@@ -896,7 +896,7 @@ Every scenario below defines: fixture, command/function, expected status, expect
 ### SC-IND-039: Generic Text-Only Repository
 
 **Fixture:** Repository with only a `.txt` file (no Python, no Markdown, no config)
-**Command:** `fcode index /path/to/repo`
+**Command:** `deeporra index /path/to/repo`
 **Expected status:** `complete`
 **Expected exit code:** 0
 **Expected SQLite rows:** files=1, parse_status='not_applicable', chunks=0 (generic text files produce no chunks)
@@ -1011,12 +1011,12 @@ Every scenario below defines: fixture, command/function, expected status, expect
 
 The project must be redesigned before adding more features if:
 
-1. **F Code cannot find existing reusable code** in golden test scenarios
-2. **F Code suggests creating new files** when existing files should be reused
-3. **F Code's MCP tools are too slow** (>10s per query consistently)
-4. **F Code leaks repository code** to external services
-5. **F Code's index is unreliable** (frequent missing/incorrect results)
-6. **F Code cannot parse standard Python projects** (FastAPI, Flask, etc.)
+1. **DeepOrra cannot find existing reusable code** in golden test scenarios
+2. **DeepOrra suggests creating new files** when existing files should be reused
+3. **DeepOrra's MCP tools are too slow** (>10s per query consistently)
+4. **DeepOrra leaks repository code** to external services
+5. **DeepOrra's index is unreliable** (frequent missing/incorrect results)
+6. **DeepOrra cannot parse standard Python projects** (FastAPI, Flask, etc.)
 
 ## 17. Scenario Review Checklist
 

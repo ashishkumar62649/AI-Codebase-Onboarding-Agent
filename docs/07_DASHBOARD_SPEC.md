@@ -1,9 +1,9 @@
-# 07_DASHBOARD_SPEC.md — F Code Dashboard Specification
+# 07_DASHBOARD_SPEC.md — DeepOrra Dashboard Specification
 
 ## 1. Dashboard Purpose
 
-The F Code dashboard is a local Streamlit application for human inspection. It helps users:
-- See what F Code indexed
+The DeepOrra dashboard is a local Streamlit application for human inspection. It helps users:
+- See what DeepOrra indexed
 - Browse repository structure and wiki
 - Test queries manually
 - Preview what MCP tools return
@@ -26,11 +26,11 @@ The dashboard binds to `127.0.0.1:8501`. No configuration for remote access. No 
 ## 4. Main User Flow
 
 ```
-1. User runs: fcode dashboard
+1. User runs: deeporra dashboard
 2. Browser opens to localhost:8501
 3. User sees Connect Repository page
 4. User enters GitHub URL or uploads ZIP
-5. F Code indexes the repository
+5. DeepOrra indexes the repository
 6. User navigates to Repository Wiki page
 7. User browses structure, symbols, summary
 8. User navigates to Ask Repository page

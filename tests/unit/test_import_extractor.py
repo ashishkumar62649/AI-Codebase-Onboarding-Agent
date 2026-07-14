@@ -1,7 +1,7 @@
 """Tests for import_extractor.py."""
 
 import ast
-from fcode.parser.import_extractor import extract_imports
+from deeporra.parser.import_extractor import extract_imports
 
 
 def test_import_module():

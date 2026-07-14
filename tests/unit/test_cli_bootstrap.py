@@ -7,9 +7,9 @@ import typer
 
 
 class TestEntryPoints:
-    def test_python_m_fcode_help(self):
+    def test_python_m_deeporra_help(self):
         result = subprocess.run(
-            [sys.executable, "-m", "fcode", "--help"],
+            [sys.executable, "-m", "deeporra", "--help"],
             capture_output=True,
             text=True,
             timeout=15,
@@ -19,26 +19,26 @@ class TestEntryPoints:
             assert cmd in result.stdout
 
     def test_root_help_lists_all_commands(self):
-        from fcode.cli.main import app
+        from deeporra.cli.main import app
         cmds = {c.name or c.callback.__name__ for c in app.registered_commands}
         expected = {"index", "status", "doctor", "dashboard", "mcp", "setup"}
         assert cmds == expected
 
     def test_help_does_not_import_unfinished_modules(self):
         before = set(sys.modules.keys())
-        import fcode.cli.main
+        import deeporra.cli.main
         after = set(sys.modules.keys())
         new_modules = after - before
-        forbidden = {"fcode.storage", "fcode.scanner", "fcode.parser",
-                     "fcode.chunking", "fcode.embeddings", "fcode.indexing",
-                     "fcode.graph", "fcode.retrieval", "fcode.mcp_server",
-                     "fcode.dashboard"}
+        forbidden = {"deeporra.storage", "deeporra.scanner", "deeporra.parser",
+                     "deeporra.chunking", "deeporra.embeddings", "deeporra.indexing",
+                     "deeporra.graph", "deeporra.retrieval", "deeporra.mcp_server",
+                     "deeporra.dashboard"}
         assert new_modules.isdisjoint(forbidden), \
             f"CLI startup imported: {new_modules & forbidden}"
 
     def test_no_command_has_side_effects(self):
-        import fcode.cli.main
-        for cmd in fcode.cli.main.app.registered_commands:
+        import deeporra.cli.main
+        for cmd in deeporra.cli.main.app.registered_commands:
             name = cmd.name or cmd.callback.__name__
             assert name in ("index", "status", "doctor", "dashboard",
                             "mcp", "setup")
@@ -46,7 +46,7 @@ class TestEntryPoints:
 
 class TestIndexCommand:
     def test_index_accepts_positional_path(self):
-        from fcode.cli.commands.index_cmd import index_cmd
+        from deeporra.cli.commands.index_cmd import index_cmd
         import inspect
         sig = inspect.signature(index_cmd)
         assert "repo_path" in sig.parameters
@@ -54,7 +54,7 @@ class TestIndexCommand:
 
 class TestStatusCommand:
     def test_status_accepts_optional_path(self):
-        from fcode.cli.commands.status_cmd import status_cmd
+        from deeporra.cli.commands.status_cmd import status_cmd
         import inspect
         sig = inspect.signature(status_cmd)
         assert "repo_path" in sig.parameters
@@ -65,7 +65,7 @@ class TestStatusCommand:
 
 class TestDoctorCommand:
     def test_doctor_accepts_optional_path(self):
-        from fcode.cli.commands.doctor_cmd import doctor_cmd
+        from deeporra.cli.commands.doctor_cmd import doctor_cmd
         import inspect
         sig = inspect.signature(doctor_cmd)
         assert "repo_path" in sig.parameters
@@ -73,7 +73,7 @@ class TestDoctorCommand:
 
 class TestDashboardCommand:
     def test_dashboard_accepts_port(self):
-        from fcode.cli.commands.dashboard_cmd import dashboard_cmd
+        from deeporra.cli.commands.dashboard_cmd import dashboard_cmd
         import inspect
         sig = inspect.signature(dashboard_cmd)
         assert "port" in sig.parameters
@@ -81,7 +81,7 @@ class TestDashboardCommand:
 
 class TestMCPCommand:
     def test_mcp_requires_repo(self):
-        from fcode.cli.commands.mcp_cmd import mcp_cmd
+        from deeporra.cli.commands.mcp_cmd import mcp_cmd
         import inspect
         sig = inspect.signature(mcp_cmd)
         assert "repo_path" in sig.parameters
@@ -89,7 +89,7 @@ class TestMCPCommand:
 
 class TestSetupCommand:
     def test_setup_accepts_agent_and_repo(self):
-        from fcode.cli.commands.setup_cmd import setup_cmd
+        from deeporra.cli.commands.setup_cmd import setup_cmd
         import inspect
         sig = inspect.signature(setup_cmd)
         assert "agent" in sig.parameters

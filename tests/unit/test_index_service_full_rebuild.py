@@ -3,8 +3,8 @@
 import inspect
 from unittest.mock import MagicMock
 
-from fcode.contracts import FCodeConfig, IndexBuildResult, IndexRunResult, IndexState
-from fcode.indexing import IndexService
+from deeporra.contracts import DeepOrraConfig, IndexBuildResult, IndexRunResult, IndexState
+from deeporra.indexing import IndexService
 
 
 def test_complete_index_api_is_present_without_constructor_io():
@@ -26,5 +26,5 @@ def test_run_index_returns_one_complete_attempt_result():
     service = IndexService(MagicMock(), MagicMock(), MagicMock())
     expected = IndexRunResult(state=IndexState.COMPLETE)
     service.build_complete_index = MagicMock(return_value=IndexBuildResult(run_result=expected))
-    assert service.run_index(FCodeConfig()) is expected
+    assert service.run_index(DeepOrraConfig()) is expected
     service.build_complete_index.assert_called_once()

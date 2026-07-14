@@ -1,10 +1,10 @@
-# AGENTS.md — F Code Root Rule File
+# AGENTS.md — DeepOrra Root Rule File
 
 ## 1. Project Identity
 
-**F Code** is a local-first repository intelligence tool that helps AI coding agents avoid writing code that already exists.
+**DeepOrra** is a local-first repository intelligence tool that helps AI coding agents avoid writing code that already exists.
 
-This file is the root instruction file for all coding agents working on F Code. Read it before any work.
+This file is the root instruction file for all coding agents working on DeepOrra. Read it before any work.
 
 ## 2. Non-Negotiable Rules
 
@@ -62,15 +62,15 @@ Do not start work until this declaration is complete.
 
 | Task Type | Required Docs | Allowed Folders |
 |-----------|--------------|-----------------|
-| Shared contracts (WP0) | `01_CONTEXT.md` | `fcode/contracts/` |
-| CLI commands, config | `01_CONTEXT.md`, `03_SYSTEM_ARCHITECTURE.md` | `fcode/cli/`, `fcode/config/` |
-| Database, storage, schema | `01_CONTEXT.md`, `04_DATA_MODEL.md` | `fcode/storage/` |
-| File scanning, parsing, graph extraction | `01_CONTEXT.md`, `05_INDEXING_AND_RETRIEVAL.md` | `fcode/scanner/`, `fcode/parser/`, `fcode/graph/graph_builder.py` |
-| Chunking, embeddings | `01_CONTEXT.md`, `05_INDEXING_AND_RETRIEVAL.md` | `fcode/chunking/`, `fcode/embeddings/` |
-| Retrieval, graph | `01_CONTEXT.md`, `04_DATA_MODEL.md`, `05_INDEXING_AND_RETRIEVAL.md` | `fcode/retrieval/`, `fcode/graph/` |
-| MCP tools | `01_CONTEXT.md`, `06_MCP_TOOLS_CONTRACT.md` | `fcode/mcp_server/` |
-| Dashboard, UI | `01_CONTEXT.md`, `07_DASHBOARD_SPEC.md` | `fcode/dashboard/` |
-| Reports, wiki | `01_CONTEXT.md`, `07_DASHBOARD_SPEC.md` | `fcode/reports/` |
+| Shared contracts (WP0) | `01_CONTEXT.md` | `deeporra/contracts/` |
+| CLI commands, config | `01_CONTEXT.md`, `03_SYSTEM_ARCHITECTURE.md` | `deeporra/cli/`, `deeporra/config/` |
+| Database, storage, schema | `01_CONTEXT.md`, `04_DATA_MODEL.md` | `deeporra/storage/` |
+| File scanning, parsing, graph extraction | `01_CONTEXT.md`, `05_INDEXING_AND_RETRIEVAL.md` | `deeporra/scanner/`, `deeporra/parser/`, `deeporra/graph/graph_builder.py` |
+| Chunking, embeddings | `01_CONTEXT.md`, `05_INDEXING_AND_RETRIEVAL.md` | `deeporra/chunking/`, `deeporra/embeddings/` |
+| Retrieval, graph | `01_CONTEXT.md`, `04_DATA_MODEL.md`, `05_INDEXING_AND_RETRIEVAL.md` | `deeporra/retrieval/`, `deeporra/graph/` |
+| MCP tools | `01_CONTEXT.md`, `06_MCP_TOOLS_CONTRACT.md` | `deeporra/mcp_server/` |
+| Dashboard, UI | `01_CONTEXT.md`, `07_DASHBOARD_SPEC.md` | `deeporra/dashboard/` |
+| Reports, wiki | `01_CONTEXT.md`, `07_DASHBOARD_SPEC.md` | `deeporra/reports/` |
 | Tests, scenarios | `01_CONTEXT.md`, `08_SCENARIOS_AND_ACCEPTANCE_TESTS.md` | `tests/` |
 | Parallel task assignment | `01_CONTEXT.md`, `09_AGENT_TASKS.md` | Per work package |
 | Architecture decisions | `01_CONTEXT.md`, `03_SYSTEM_ARCHITECTURE.md` | Any (report only) |
@@ -79,23 +79,23 @@ Do not start work until this declaration is complete.
 
 | Owner | Allowed Folders | Forbidden Folders |
 |-------|----------------|-------------------|
-| Contracts Agent | `fcode/contracts/` | All feature module folders |
-| CLI/Config Agent | `fcode/cli/`, `fcode/config/`, `fcode/utils/` | `fcode/mcp_server/`, `fcode/dashboard/`, `tests/` |
-| Storage Agent | `fcode/storage/` | `fcode/cli/`, `fcode/mcp_server/`, `fcode/dashboard/` |
-| Scanner/Parser Agent | `fcode/scanner/`, `fcode/parser/`, `fcode/graph/graph_builder.py` | `fcode/storage/`, `fcode/mcp_server/`, `fcode/dashboard/`, `fcode/graph/graph_traverser.py`, `fcode/graph/impact_analyzer.py` |
-| Chunking/Embeddings Agent | `fcode/chunking/`, `fcode/embeddings/` | `fcode/parser/`, `fcode/mcp_server/`, `fcode/dashboard/` |
-| Retrieval/Graph Agent | `fcode/retrieval/`, `fcode/graph/` | `fcode/cli/`, `fcode/mcp_server/`, `fcode/dashboard/` |
-| MCP Server Agent | `fcode/mcp_server/` | `fcode/cli/`, `fcode/dashboard/`, `fcode/storage/` |
-| Dashboard Agent | `fcode/dashboard/` | `fcode/mcp_server/`, `fcode/storage/`, `fcode/cli/` |
-| Reports/Wiki Agent | `fcode/reports/` | `fcode/mcp_server/`, `fcode/cli/`, `fcode/dashboard/` |
-| Tests Agent | `tests/` | `fcode/` (no production code) |
+| Contracts Agent | `deeporra/contracts/` | All feature module folders |
+| CLI/Config Agent | `deeporra/cli/`, `deeporra/config/`, `deeporra/utils/` | `deeporra/mcp_server/`, `deeporra/dashboard/`, `tests/` |
+| Storage Agent | `deeporra/storage/` | `deeporra/cli/`, `deeporra/mcp_server/`, `deeporra/dashboard/` |
+| Scanner/Parser Agent | `deeporra/scanner/`, `deeporra/parser/`, `deeporra/graph/graph_builder.py` | `deeporra/storage/`, `deeporra/mcp_server/`, `deeporra/dashboard/`, `deeporra/graph/graph_traverser.py`, `deeporra/graph/impact_analyzer.py` |
+| Chunking/Embeddings Agent | `deeporra/chunking/`, `deeporra/embeddings/` | `deeporra/parser/`, `deeporra/mcp_server/`, `deeporra/dashboard/` |
+| Retrieval/Graph Agent | `deeporra/retrieval/`, `deeporra/graph/` | `deeporra/cli/`, `deeporra/mcp_server/`, `deeporra/dashboard/` |
+| MCP Server Agent | `deeporra/mcp_server/` | `deeporra/cli/`, `deeporra/dashboard/`, `deeporra/storage/` |
+| Dashboard Agent | `deeporra/dashboard/` | `deeporra/mcp_server/`, `deeporra/storage/`, `deeporra/cli/` |
+| Reports/Wiki Agent | `deeporra/reports/` | `deeporra/mcp_server/`, `deeporra/cli/`, `deeporra/dashboard/` |
+| Tests Agent | `tests/` | `deeporra/` (no production code) |
 
 ## 8. Parallel Work Rules
 
 1. No agent may change shared contracts (tool schema, database schema, folder structure, command names, scope) without stopping and reporting the change.
 2. Each agent reads only the docs listed in the routing table for its task type.
 3. Each agent edits only the folders listed in its ownership row.
-4. Shared files (`fcode/config/`, `fcode/storage/`, `fcode/utils/`) require explicit coordination.
+4. Shared files (`deeporra/config/`, `deeporra/storage/`, `deeporra/utils/`) require explicit coordination.
 5. When two agents need the same file, the agent that needs it more gets it; the other waits.
 6. Conflicts are resolved by the project owner, not by agents guessing.
 
@@ -130,9 +130,9 @@ Follow these rules when implementing anything:
 Graphify is a development helper only. It is NOT a runtime dependency.
 
 - Use Graphify to inspect a repository's graph structure during development.
-- Use Graphify's node/edge schema as inspiration for F Code's `code_nodes`/`code_edges` tables.
+- Use Graphify's node/edge schema as inspiration for DeepOrra's `code_nodes`/`code_edges` tables.
 - Use Graphify's EXTRACTED/INFERRED/AMBIGUOUS confidence labels as inspiration.
-- Do NOT import Graphify modules into F Code source.
+- Do NOT import Graphify modules into DeepOrra source.
 - Do NOT add Graphify to `requirements.txt` or `pyproject.toml`.
 - Do NOT call Graphify at runtime.
 
@@ -141,14 +141,14 @@ Graphify is a development helper only. It is NOT a runtime dependency.
 Ponytail is a development discipline only. It is NOT a runtime dependency.
 
 - Follow Ponytail's 7-rung minimal solution ladder when implementing.
-- Embed Ponytail-style rules into F Code's agent prompts (planner, test generator).
+- Embed Ponytail-style rules into DeepOrra's agent prompts (planner, test generator).
 - Do NOT install Ponytail as a package dependency.
-- Do NOT import Ponytail modules into F Code source.
+- Do NOT import Ponytail modules into DeepOrra source.
 - Do NOT call Ponytail at runtime.
 
 ## 13. Security and Privacy Rules
 
-1. F Code runs on the user's laptop. No code leaves the machine.
+1. DeepOrra runs on the user's laptop. No code leaves the machine.
 2. No repository code is uploaded to any server.
 3. No API keys are stored in plain text.
 4. `.env` files and secrets are detected and redacted from indexing.
@@ -208,7 +208,7 @@ After completing any task, the agent must report:
 
 ---
 
-*This file is the root rule file. Every coding agent working on F Code must read it first.*
+*This file is the root rule file. Every coding agent working on DeepOrra must read it first.*
 
 ## 17. Archived Documents
 
@@ -266,7 +266,7 @@ These limits are mandatory hard limits for the current build:
 
 ## 20. Pipeline Module Boundaries
 
-`fcode/indexing/index_service.py` is owned by the Integration Agent.
+`deeporra/indexing/index_service.py` is owned by the Integration Agent.
 
 It is the only module that controls:
 - Phase order
@@ -326,31 +326,31 @@ WP0 → WP1 + WP2 + WP3 → WP4 → WP5 → WP6
 
 **Deferred stubs (exit code 2):** `dashboard`, `mcp`, `setup`
 
-**Owned files:** `fcode/cli/`, `fcode/config/`, `fcode/utils/`
+**Owned files:** `deeporra/cli/`, `deeporra/config/`, `deeporra/utils/`
 
 ### WP2 — Storage
 
-**Owned files:** `fcode/storage/`
+**Owned files:** `deeporra/storage/`
 
 Includes SQLite schema and migrations, Chroma persistence, FTS5, graph persistence.
 
 ### WP3 — Scanner, Parser, and Graph Extraction
 
-**Owned files:** `fcode/scanner/`, `fcode/parser/`, `fcode/graph/graph_builder.py`
+**Owned files:** `deeporra/scanner/`, `deeporra/parser/`, `deeporra/graph/graph_builder.py`
 
 Includes scanner, ignore rules, secret detection, Python AST, symbols, imports, routes, graph builder.
 
 ### WP4 — Chunking and Embeddings
 
-**Owned files:** `fcode/chunking/`, `fcode/embeddings/`
+**Owned files:** `deeporra/chunking/`, `deeporra/embeddings/`
 
 Includes chunk creation, local CPU embeddings, warning handling.
 
 ### WP5 — Integration
 
-**Owned files:** `fcode/indexing/`
+**Owned files:** `deeporra/indexing/`
 
-Includes `fcode/indexing/index_service.py`, full pipeline wiring, state transitions, failure cleanup, verification counts.
+Includes `deeporra/indexing/index_service.py`, full pipeline wiring, state transitions, failure cleanup, verification counts.
 
 ### WP6 — First-Slice Tests
 

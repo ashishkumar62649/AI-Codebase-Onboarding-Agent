@@ -1,4 +1,4 @@
-"""Configuration tests — verify fcode/config/ module."""
+"""Configuration tests — verify DeepOrra/config/ module."""
 
 import copy
 import json
@@ -6,19 +6,19 @@ from pathlib import Path
 
 import pytest
 
-from fcode.config.defaults import (
+from deeporra.config.defaults import (
     ALLOWED_TOP_KEYS,
     DEFAULT_CONFIG,
     DEFAULT_SCHEMA_VERSION,
     LOCKED_CONFIG_PATHS,
 )
-from fcode.config.settings import (
+from deeporra.config.settings import (
     CONFIG_FILE_NAME,
     create_default_config,
     load_config,
     save_config,
 )
-from fcode.contracts import FCodeConfig
+from deeporra.contracts import DeepOrraConfig
 
 
 def _fresh_config():
@@ -56,8 +56,8 @@ class TestDefaults:
 
 
 class TestLoadConfig:
-    def test_default_config_matches_fcode_config_defaults(self):
-        cfg = FCodeConfig()
+    def test_default_config_matches_DEEPORRA_config_defaults(self):
+        cfg = DeepOrraConfig()
         assert cfg.repo_path == "."
         assert cfg.embedding_device == "cpu"
 
@@ -66,7 +66,7 @@ class TestLoadConfig:
         data["repo_path"] = str(tmp_path)
         _write_config(str(tmp_path), data)
         cfg = load_config(str(tmp_path))
-        assert isinstance(cfg, FCodeConfig)
+        assert isinstance(cfg, DeepOrraConfig)
         assert cfg.embedding_device == "cpu"
 
     def test_malformed_json_fails(self, tmp_path: Path):
@@ -125,14 +125,14 @@ class TestLoadConfig:
 
 class TestSaveConfig:
     def test_save_and_relaod_roundtrip(self, tmp_path: Path):
-        cfg = FCodeConfig(repo_path=str(tmp_path))
+        cfg = DeepOrraConfig(repo_path=str(tmp_path))
         save_config(str(tmp_path), cfg)
         result = load_config(str(tmp_path))
         assert result.embedding_device == "cpu"
         assert "all-MiniLM-L6-v2" in result.embedding_model
 
     def test_atomic_save_creates_no_temp(self, tmp_path: Path):
-        cfg = FCodeConfig(repo_path=str(tmp_path))
+        cfg = DeepOrraConfig(repo_path=str(tmp_path))
         save_config(str(tmp_path), cfg)
         target = Path(tmp_path) / CONFIG_FILE_NAME
         assert target.exists()
@@ -146,9 +146,9 @@ class TestSaveConfig:
 
 
 class TestCreateDefault:
-    def test_create_default_returns_fcode_config(self, tmp_path: Path):
+    def test_create_default_returns_DEEPORRA_config(self, tmp_path: Path):
         cfg = create_default_config(str(tmp_path))
-        assert isinstance(cfg, FCodeConfig)
+        assert isinstance(cfg, DeepOrraConfig)
 
     def test_create_default_creates_file(self, tmp_path: Path):
         create_default_config(str(tmp_path))
@@ -157,4 +157,4 @@ class TestCreateDefault:
     def test_create_default_force_overwrites(self, tmp_path: Path):
         create_default_config(str(tmp_path))
         cfg = create_default_config(str(tmp_path), force=True)
-        assert isinstance(cfg, FCodeConfig)
+        assert isinstance(cfg, DeepOrraConfig)

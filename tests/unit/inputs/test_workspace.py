@@ -6,15 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from fcode.inputs.errors import WorkspaceCleanupError
-from fcode.inputs.workspace import OwnedWorkspace
+from deeporra.inputs.errors import WorkspaceCleanupError
+from deeporra.inputs.workspace import OwnedWorkspace
 
 
 def test_auto_temp_directory():
     ws = OwnedWorkspace()
     assert ws.root.exists()
     assert ws.root.is_dir()
-    assert ws.root.name.startswith("fcode_")
+    assert ws.root.name.startswith("DEEPORRA_")
     ws.cleanup()
 
 
@@ -61,7 +61,7 @@ def test_refuses_to_clean_drive_root():
         ws._validate_cleanup_safety(root)
 
 
-def test_refuses_to_clean_fcode_project():
+def test_refuses_to_clean_DEEPORRA_project():
     ws = OwnedWorkspace(Path(tempfile.mkdtemp()))
     with pytest.raises(WorkspaceCleanupError):
         ws._validate_cleanup_safety(Path(os.getcwd()))

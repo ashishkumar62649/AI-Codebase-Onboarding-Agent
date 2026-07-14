@@ -13,14 +13,14 @@ from pathlib import Path
 import anyio
 import pytest
 
-from fcode.chunking import Chunker
-from fcode.contracts import FCodeConfig, IndexState, RepoInput
-from fcode.embeddings import EmbeddingEncoder
-from fcode.graph.graph_builder import build_graph
-from fcode.indexing import IndexService
-from fcode.parser.python_ast import parse as parse_file
-from fcode.querying import QueryService
-from fcode.scanner.file_scanner import scan as scan_repo
+from deeporra.chunking import Chunker
+from deeporra.contracts import DeepOrraConfig, IndexState, RepoInput
+from deeporra.embeddings import EmbeddingEncoder
+from deeporra.graph.graph_builder import build_graph
+from deeporra.indexing import IndexService
+from deeporra.parser.python_ast import parse as parse_file
+from deeporra.querying import QueryService
+from deeporra.scanner.file_scanner import scan as scan_repo
 
 
 class _FakeSentenceTransformer:
@@ -28,11 +28,11 @@ class _FakeSentenceTransformer:
         pass
 
     def get_sentence_embedding_dimension(self):
-        from fcode.embeddings import EXPECTED_DIMENSION
+        from deeporra.embeddings import EXPECTED_DIMENSION
         return EXPECTED_DIMENSION
 
     def encode(self, texts, **_):
-        from fcode.embeddings import EXPECTED_DIMENSION
+        from deeporra.embeddings import EXPECTED_DIMENSION
         if isinstance(texts, str):
             texts = [texts]
         return [[0.25] * EXPECTED_DIMENSION for _ in texts]
@@ -102,7 +102,7 @@ def indexed_repo(tmp_path, monkeypatch):
         _Scanner(), _Parser(), Chunker(),
         encoder=EmbeddingEncoder(), graph_builder=_GraphBuilder(),
     )
-    result = svc.build_complete_index(FCodeConfig(repo_path=str(repo)))
+    result = svc.build_complete_index(DeepOrraConfig(repo_path=str(repo)))
     diagnostics = [d.message for d in result.run_result.diagnostics]
     assert result.run_result.state == IndexState.COMPLETE, f"Index failed: {diagnostics}"
     return str(repo)
@@ -116,7 +116,7 @@ async def test_mcp_stdio_smoke(indexed_repo):
     from mcp.types import JSONRPCMessage
     from mcp.shared.session import SessionMessage
 
-    from fcode.mcp_server import create_mcp_server
+    from deeporra.mcp_server import create_mcp_server
     fastmcp = create_mcp_server()
     server = fastmcp._mcp_server
 
@@ -205,7 +205,7 @@ async def test_mcp_stdio_smoke(indexed_repo):
 def test_no_network_listener():
     """Verify that server creation does not open a TCP port."""
     import socket
-    from fcode.mcp_server import create_mcp_server
+    from deeporra.mcp_server import create_mcp_server
     server = create_mcp_server()
     assert server is not None
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -214,23 +214,23 @@ def test_no_network_listener():
     assert result != 0, "Port 8000 should not be open"
 
 
-# ── 18. No .fcode directory is created ─────────────────────────────────
+# ── 18. No .deeporra directory is created ─────────────────────────────────
 
-def test_no_fcode_created(tmp_path):
-    """QueryService on an unindexed root does not create .fcode."""
+def test_no_DEEPORRA_created(tmp_path):
+    """QueryService on an unindexed root does not create .deeporra."""
     repo = tmp_path / "norepo"
     repo.mkdir()
     qs = QueryService(str(repo))
     with pytest.raises(Exception):
         qs.get_repository_summary()
-    assert not (Path(str(repo)) / ".fcode").exists()
+    assert not (Path(str(repo)) / ".deeporra").exists()
 
 
 # ── 19. No active generation is changed ────────────────────────────────
 
 def test_no_generation_change_after_query(indexed_repo):
     """Repeated query does not change the active generation."""
-    from fcode.indexing.full_rebuild import FullRebuildCoordinator
+    from deeporra.indexing.full_rebuild import FullRebuildCoordinator
     coord = FullRebuildCoordinator(indexed_repo)
     gen_before = coord.active_generation()
 
@@ -245,7 +245,7 @@ def test_no_generation_change_after_query(indexed_repo):
 
 def test_no_sqlite_write_after_query(indexed_repo):
     """Query operations are read-only."""
-    from fcode.indexing.full_rebuild import FullRebuildCoordinator
+    from deeporra.indexing.full_rebuild import FullRebuildCoordinator
 
     coord = FullRebuildCoordinator(indexed_repo)
     gen = coord.active_generation()
@@ -297,7 +297,7 @@ async def test_hybrid_search_stdio_cold_and_warm(indexed_repo, tmp_path):
         "        return [[0.25] * 384 for _ in texts]\n"
         "m.SentenceTransformer = SentenceTransformer\n"
         "sys.modules['sentence_transformers'] = m\n"
-        "from fcode.mcp_server.__main__ import main\n"
+        "from deeporra.mcp_server.__main__ import main\n"
         "main()\n"
     )
     params = StdioServerParameters(

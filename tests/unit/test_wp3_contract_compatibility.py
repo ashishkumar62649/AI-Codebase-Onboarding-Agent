@@ -5,7 +5,7 @@ import os
 import uuid
 import pytest
 
-from fcode.contracts import (
+from deeporra.contracts import (
     ChunkType,
     Confidence,
     FileType,
@@ -15,7 +15,7 @@ from fcode.contracts import (
     ParseStatus,
     SymbolType,
 )
-from fcode.contracts import (
+from deeporra.contracts import (
     GraphBuildResult,
     GraphEdgeInput,
     GraphNodeInput,
@@ -27,7 +27,7 @@ from fcode.contracts import (
     ScannedFile,
     SkippedFileDiagnostic,
 )
-from fcode.contracts.interfaces import (
+from deeporra.contracts.interfaces import (
     GraphBuilderProtocol,
     PythonParserProtocol,
     ScannerProtocol,
@@ -57,7 +57,7 @@ class TestEnumsAreCanonical:
 
 class TestProtocolCompliance:
     def test_scanner_public_method_matches_protocol(self):
-        from fcode.scanner.file_scanner import scan
+        from deeporra.scanner.file_scanner import scan
         assert callable(scan)
         import inspect
         sig = inspect.signature(scan)
@@ -66,7 +66,7 @@ class TestProtocolCompliance:
         assert "config" in params
 
     def test_parser_public_method_matches_protocol(self):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         assert callable(parse)
         import inspect
         sig = inspect.signature(parse)
@@ -74,7 +74,7 @@ class TestProtocolCompliance:
         assert "file" in params
 
     def test_graph_builder_public_method_matches_protocol(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         assert callable(build)
         import inspect
         sig = inspect.signature(build)
@@ -84,32 +84,32 @@ class TestProtocolCompliance:
 
 class TestScannerContract:
     def test_scanner_returns_real_scanresult(self):
-        from fcode.scanner.file_scanner import scan
-        from fcode.contracts import FCodeConfig, RepoInput
+        from deeporra.scanner.file_scanner import scan
+        from deeporra.contracts import DeepOrraConfig, RepoInput
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
-            result = scan(RepoInput(repo_path=tmp), FCodeConfig(repo_path=tmp))
+            result = scan(RepoInput(repo_path=tmp), DeepOrraConfig(repo_path=tmp))
             assert isinstance(result, ScanResult)
 
     def test_scanner_returns_real_scannedfile(self):
-        from fcode.scanner.file_scanner import scan
-        from fcode.contracts import FCodeConfig, RepoInput
+        from deeporra.scanner.file_scanner import scan
+        from deeporra.contracts import DeepOrraConfig, RepoInput
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             with open(os.path.join(tmp, "mod.py"), "w") as f:
                 f.write("x=1\n")
-            result = scan(RepoInput(repo_path=tmp), FCodeConfig(repo_path=tmp))
+            result = scan(RepoInput(repo_path=tmp), DeepOrraConfig(repo_path=tmp))
             assert len(result.files) >= 1
             assert isinstance(result.files[0], ScannedFile)
 
     def test_no_dynamic_fields_attached_by_scanner(self):
         import tempfile
-        from fcode.scanner.file_scanner import scan
-        from fcode.contracts import FCodeConfig, RepoInput
+        from deeporra.scanner.file_scanner import scan
+        from deeporra.contracts import DeepOrraConfig, RepoInput
         with tempfile.TemporaryDirectory() as tmp:
             with open(os.path.join(tmp, "mod.py"), "w") as f:
                 f.write("x=1\n")
-            result = scan(RepoInput(repo_path=tmp), FCodeConfig(repo_path=tmp))
+            result = scan(RepoInput(repo_path=tmp), DeepOrraConfig(repo_path=tmp))
             for sf in result.files:
                 known = {"file_path", "file_type", "size_bytes", "is_binary",
                          "file_id", "absolute_path", "language", "has_secrets",
@@ -128,14 +128,14 @@ class TestScannerContract:
 
 class TestParserContract:
     def test_parser_accepts_scannedfile(self):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         sf = ScannedFile(file_path="mod.py", safe_content="x=1\n",
                          file_type=FileType.SOURCE, content_hash="abc")
         result = parse(sf)
         assert isinstance(result, ParsedFile)
 
     def test_parser_preserves_file_id(self):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         sf = ScannedFile(file_path="mod.py", safe_content="x=1\n",
                          file_type=FileType.SOURCE, content_hash="abc",
                          file_id="file:mod.py")
@@ -143,7 +143,7 @@ class TestParserContract:
         assert result.file_id == "file:mod.py"
 
     def test_parser_never_reopens_original_source(self):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         import builtins
         original_open = builtins.open
         calls = []
@@ -163,14 +163,14 @@ class TestParserContract:
             b.open = saved
 
     def test_syntax_failure_returns_error_status(self):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         sf = ScannedFile(file_path="bad.py", safe_content="def foo(:\n",
                          file_type=FileType.SOURCE, content_hash="abc")
         result = parse(sf)
         assert result.status == ParseStatus.ERROR
 
     def test_syntax_failure_empty_lists(self):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         sf = ScannedFile(file_path="bad.py", safe_content="def foo(:\n",
                          file_type=FileType.SOURCE, content_hash="abc")
         result = parse(sf)
@@ -189,7 +189,7 @@ class TestSymbolExtraction:
     SRC_NESTED = "class Outer:\n    class Inner:\n        def method(self): pass\n"
 
     def _parse(self, code):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         sf = ScannedFile(file_path="mod.py", safe_content=code,
                          file_type=FileType.SOURCE, content_hash="abc")
         return parse(sf)
@@ -244,7 +244,7 @@ def list_users():
 """
 
     def _parse(self, code=None):
-        from fcode.parser.python_ast import parse
+        from deeporra.parser.python_ast import parse
         src = code or self.SRC
         sf = ScannedFile(file_path="routes.py", safe_content=src,
                          file_type=FileType.SOURCE, content_hash="abc")
@@ -301,7 +301,7 @@ class TestGraphContract:
                            method=HttpMethod.GET, confidence=Confidence.EXTRACTED, **kw)
 
     def test_canonical_graph_node_types(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         pf = self._make_pf(symbols=[
             self._sym("foo", SymbolType.FUNCTION),
             self._sym("MyClass", SymbolType.CLASS),
@@ -315,7 +315,7 @@ class TestGraphContract:
         assert GraphNodeType.METHOD in types_found
 
     def test_test_node_projection(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         pf = self._make_pf(file_path="test_mod.py", file_type=FileType.TEST,
                            symbols=[self._sym("test_foo", SymbolType.FUNCTION)])
         result = build([pf])
@@ -325,21 +325,21 @@ class TestGraphContract:
         assert len(fn_nodes) == 0
 
     def test_defines_edge(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         pf = self._make_pf(symbols=[self._sym("foo", SymbolType.FUNCTION)])
         result = build([pf])
         defines_edges = [e for e in result.edges if e.relation == GraphRelation.DEFINES]
         assert len(defines_edges) >= 1
 
     def test_imports_edge(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         pf = self._make_pf(imports=[self._imp("os")])
         result = build([pf])
         imports_edges = [e for e in result.edges if e.relation == GraphRelation.IMPORTS]
         assert len(imports_edges) >= 1
 
     def test_inherits_edge(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         base = self._sym("Base", SymbolType.CLASS, symbol_id="sym:Base")
         child = self._sym("Child", SymbolType.CLASS, symbol_id="sym:Child",
                           metadata={"bases": ["Base"]})
@@ -351,7 +351,7 @@ class TestGraphContract:
         assert inherits_edges[0].target_node_id == "sym:Base"
 
     def test_calls_edge(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         caller = self._sym("caller", SymbolType.FUNCTION, symbol_id="sym:caller",
                            metadata={"calls": ["callee"]})
         callee = self._sym("callee", SymbolType.FUNCTION, symbol_id="sym:callee")
@@ -363,7 +363,7 @@ class TestGraphContract:
         assert calls_edges[0].target_node_id == "sym:callee"
 
     def test_tests_edge(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         test_fn = self._sym("test_foo", SymbolType.FUNCTION, symbol_id="sym:test_foo")
         target_fn = self._sym("foo", SymbolType.FUNCTION, symbol_id="sym:foo")
         pf = self._make_pf(file_path="test_mod.py", symbols=[test_fn, target_fn])
@@ -373,7 +373,7 @@ class TestGraphContract:
         assert tests_edges[0].source_node_id == "test:test_mod.py:test_foo:1"
 
     def test_handles_route_edge(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         rid = "route:GET:/users:mod.py:1"
         route_sym = self._sym("GET /users", SymbolType.ROUTE, symbol_id=rid)
         handler_sym = self._sym("list_users", SymbolType.FUNCTION, symbol_id="sym:list_users")
@@ -394,7 +394,7 @@ class TestGraphContract:
         assert parts[1] == "GET"
 
     def test_duplicate_evidence_edges_preserved(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         imp1 = self._imp("os", line_number=1)
         imp2 = self._imp("os", line_number=5)
         pf = self._make_pf(imports=[imp1, imp2])
@@ -413,7 +413,7 @@ class TestGraphContract:
         assert edge.relation == GraphRelation.DEFINES
 
     def test_no_variable_graph_nodes(self):
-        from fcode.graph.graph_builder import build
+        from deeporra.graph.graph_builder import build
         pf = self._make_pf(symbols=[
             self._sym("x", SymbolType.VARIABLE),
         ])
@@ -436,14 +436,14 @@ class TestSecretSafety:
 
     def test_real_scan_hides_secret_from_serialized_scannedfile(self):
         import tempfile, json, dataclasses
-        from fcode.scanner.file_scanner import scan
-        from fcode.contracts import FCodeConfig, RepoInput
+        from deeporra.scanner.file_scanner import scan
+        from deeporra.contracts import DeepOrraConfig, RepoInput
         original_secret = "sk_test_ABCdef789GHIJklmnop1234"
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "secret.py")
             with open(path, "w") as f:
                 f.write(f'API_KEY = "{original_secret}"\nprint("ok")\n')
-            result = scan(RepoInput(repo_path=tmp), FCodeConfig(repo_path=tmp))
+            result = scan(RepoInput(repo_path=tmp), DeepOrraConfig(repo_path=tmp))
             secret_files = [sf for sf in result.files if sf.has_secrets]
             assert len(secret_files) >= 1
             sf = secret_files[0]
@@ -456,14 +456,14 @@ class TestSecretSafety:
 
     def test_real_scan_hides_secret_from_serialized_scanresult(self):
         import tempfile, json, dataclasses
-        from fcode.scanner.file_scanner import scan
-        from fcode.contracts import FCodeConfig, RepoInput
+        from deeporra.scanner.file_scanner import scan
+        from deeporra.contracts import DeepOrraConfig, RepoInput
         original_secret = "ghp_ABCdef789GHIJklmnop1234XYZabc"
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "token.py")
             with open(path, "w") as f:
                 f.write(f'TOKEN = "{original_secret}"\n')
-            result = scan(RepoInput(repo_path=tmp), FCodeConfig(repo_path=tmp))
+            result = scan(RepoInput(repo_path=tmp), DeepOrraConfig(repo_path=tmp))
             assert result.warning_count >= 1
             serialized = json.dumps(dataclasses.asdict(result), sort_keys=True, default=str)
             assert original_secret not in serialized
