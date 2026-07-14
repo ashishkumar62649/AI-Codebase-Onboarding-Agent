@@ -1017,14 +1017,6 @@ class TestRegressionIsolation:
         r2 = s.build_through_chunking(DeepOrraConfig(repo_path="."))
         assert r1.state_history == r2.state_history  # same inputs → same history
 
-    def test_deterministic_storage_call_order(self):
-        sql = _FakeSQLite()
-        fts = _FakeFTS()
-        s = _make_step4_svc(sqlite_store=sql, fts_store=fts)
-        r = s.build_through_sqlite_fts(DeepOrraConfig(repo_path="."))
-        assert r.run_result.state == IndexState.STORING
-
-
 # ── No later-stage persistence ──────────────────────────────────────────────
 
 

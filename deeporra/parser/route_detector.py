@@ -4,6 +4,7 @@ import ast
 from typing import Generator
 
 from deeporra.contracts import Confidence, HttpMethod, ParsedRoute, ParsedSymbol, SymbolType
+from deeporra.parser.symbol_extractor import _format_signature
 
 FASTAPI_ATTRIBUTES = {"get", "post", "put", "delete", "patch"}
 
@@ -31,7 +32,7 @@ def extract_routes(tree: ast.AST, file_path: str) -> Generator[tuple[ParsedRoute
                     confidence=Confidence.EXTRACTED,
                 )
 
-                sig = _format_handler_signature(node)
+                sig = _format_signature(node)
                 qualified = _compute_qualified_name(node)
                 route_symbol = ParsedSymbol(
                     symbol_type=SymbolType.ROUTE,
@@ -62,28 +63,6 @@ def _extract_static_path(deco: ast.Call) -> str | None:
     if deco.args and isinstance(deco.args[0], ast.Constant) and isinstance(deco.args[0].value, str):
         return deco.args[0].value
     return None
-
-
-def _format_handler_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
-    args = node.args
-    parts = ["("]
-    all_args = [a.arg for a in args.args]
-    if args.vararg:
-        all_args.append(f"*{args.vararg.arg}")
-    all_args.extend(a.arg for a in args.kwonlyargs)
-    if args.kwarg:
-        all_args.append(f"**{args.kwarg.arg}")
-    parts.append(", ".join(all_args))
-    parts.append(")")
-    returns = ""
-    if node.returns:
-        try:
-            returns = ast.unparse(node.returns)
-        except Exception:
-            returns = ""
-    if returns:
-        parts.append(f" -> {returns}")
-    return "".join(parts)
 
 
 def _compute_qualified_name(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:

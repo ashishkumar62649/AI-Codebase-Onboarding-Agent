@@ -122,10 +122,6 @@ class Chunker:
         return None
 
     @staticmethod
-    def _get_lines(content: str) -> list[str]:
-        return content.split("\n")
-
-    @staticmethod
     def _safe_get_lines(sf: ScannedFile, start: int, end: int) -> str:
         lines = sf.safe_content.split("\n")
         lines_len = len(lines)
@@ -411,16 +407,6 @@ class Chunker:
     _RST_HEADING_PATTERN = re.compile(
         r"^([=\-~^`:'\"\._*+#<>!@$%&]){3,}\s*$", re.MULTILINE
     )
-
-    @classmethod
-    def _find_rst_headings(cls, content: str) -> list[tuple[int, str, str]]:
-        lines = content.split("\n")
-        headings: list[tuple[int, str, str]] = []
-        for i, line in enumerate(lines):
-            if i + 1 < len(lines) and cls._RST_HEADING_PATTERN.match(lines[i + 1]):
-                marker = lines[i + 1][0]
-                headings.append((i + 1, line.strip(), marker))
-        return headings
 
     def _split_doc_chunks(self, sf: ScannedFile, md_pattern: str) -> list[CodeChunk]:
         content = sf.safe_content
