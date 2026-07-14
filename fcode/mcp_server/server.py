@@ -78,6 +78,9 @@ def _safe_json(result: Any) -> str:
 
 
 def create_mcp_server() -> FastMCP:
+    # FastMCP dispatches sync tools on an AnyIO worker; import native extensions first.
+    import sentence_transformers  # noqa: F401
+
     mcp = FastMCP(
         name=SERVER_NAME,
         instructions=SERVER_INSTRUCTIONS,

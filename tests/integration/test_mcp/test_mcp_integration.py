@@ -5,6 +5,7 @@ handles protocol messages correctly using anyio memory streams.
 """
 
 import json
+import os
 import sys
 import types
 from pathlib import Path
@@ -277,3 +278,53 @@ def test_source_files_unchanged(indexed_repo):
 
     after = main_py.read_bytes()
     assert before == after
+
+
+@pytest.mark.asyncio
+async def test_hybrid_search_stdio_cold_and_warm(indexed_repo, tmp_path):
+    """Real stdio server keeps semantic hybrid search available without downloads."""
+    from mcp import ClientSession
+    from mcp.client.stdio import StdioServerParameters, stdio_client
+
+    bootstrap = tmp_path / "server.py"
+    bootstrap.write_text(
+        "import sys, types\n"
+        "m = types.ModuleType('sentence_transformers')\n"
+        "class SentenceTransformer:\n"
+        "    def __init__(self, *args, **kwargs): pass\n"
+        "    def get_sentence_embedding_dimension(self): return 384\n"
+        "    def encode(self, texts, **kwargs):\n"
+        "        return [[0.25] * 384 for _ in texts]\n"
+        "m.SentenceTransformer = SentenceTransformer\n"
+        "sys.modules['sentence_transformers'] = m\n"
+        "from fcode.mcp_server.__main__ import main\n"
+        "main()\n"
+    )
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=[str(bootstrap)],
+        cwd=Path.cwd(),
+        env={**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"},
+    )
+    try:
+        async with stdio_client(params) as (reader, writer):
+            async with ClientSession(reader, writer) as session:
+                await session.initialize()
+                with anyio.fail_after(10):
+                    cold = await session.call_tool("hybrid_search", {
+                        "repository_root": indexed_repo, "query": "greet", "limit": 3,
+                    })
+                with anyio.fail_after(10):
+                    warm = await session.call_tool("hybrid_search", {
+                        "repository_root": indexed_repo, "query": "greet", "limit": 3,
+                    })
+                with anyio.fail_after(10):
+                    existing = await session.call_tool("find_existing_implementation", {
+                        "repository_root": indexed_repo, "query": "greet", "limit": 3,
+                    })
+                assert not cold.isError and not warm.isError and not existing.isError
+                results = json.loads(cold.content[0].text)
+                assert results and results[0]["semantic_score"] is not None
+                assert results[0]["combined_score"] is not None
+    except* anyio.BrokenResourceError:
+        pass
