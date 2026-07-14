@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -19,7 +20,9 @@ def _invoke(*args: str, timeout: int = 15) -> subprocess.CompletedProcess:
 
 
 def _DEEPORRA_on_path() -> bool:
-    return shutil.which("deeporra") is not None
+    """Check if deeporra console script exists in the active project venv."""
+    scripts_dir = Path(sys.executable).parent
+    return (scripts_dir / "deeporra.exe").exists() or (scripts_dir / "deeporra").exists()
 
 
 class TestHelp:
@@ -134,13 +137,16 @@ class TestSetup:
 
 
 class TestConsoleScript:
-    """Test that `DeepOrra --help` works when the console script is on PATH."""
+    """Test that `deeporra --help` works when the console script exists in the project venv."""
 
-    def test_DEEPORRA_command_works(self):
-        if not _DEEPORRA_on_path():
-            pytest.skip("DeepOrra not on PATH")
+    def test_deeporra_command_works(self):
+        scripts_dir = Path(sys.executable).parent
+        deeporra_exe = scripts_dir / "deeporra.exe"
+        if not deeporra_exe.exists():
+            deeporra_exe = scripts_dir / "deeporra"
+        assert deeporra_exe.exists(), f"deeporra console script not found in {scripts_dir}"
         result = subprocess.run(
-            ["DeepOrra", "--help"],
+            [str(deeporra_exe), "--help"],
             capture_output=True,
             text=True,
             timeout=15,
