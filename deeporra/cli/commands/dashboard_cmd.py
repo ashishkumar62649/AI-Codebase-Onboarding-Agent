@@ -1,11 +1,12 @@
-"""DeepOrra dashboard [--port] — deferred stub (exit 2)."""
+"""DeepOrra dashboard [--port] — start the Streamlit dashboard."""
 
 import typer
+
+from deeporra.dashboard.__main__ import main as run_dashboard
 
 
 def dashboard_cmd(
     port: int = typer.Option(8501, "--port", help="Dashboard port"),
 ) -> None:
     """Start Streamlit dashboard on localhost."""
-    typer.echo("This command is not available in the first implementation slice.")
-    raise typer.Exit(code=2)
+    run_dashboard(port=port)

@@ -1,11 +1,8 @@
-"""DeepOrra mcp --repo <path> — deferred stub (exit 2)."""
+"""DeepOrra mcp — start the MCP stdio server."""
 
-import typer
+from deeporra.mcp_server.__main__ import main as run_mcp_server
 
 
-def mcp_cmd(
-    repo_path: str = typer.Option(..., "--repo", help="Path to indexed repository"),
-) -> None:
+def mcp_cmd() -> None:
     """Start MCP stdio server for coding agents."""
-    typer.echo("This command is not available in the first implementation slice.")
-    raise typer.Exit(code=2)
+    run_mcp_server()

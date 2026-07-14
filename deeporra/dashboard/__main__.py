@@ -6,9 +6,12 @@ from pathlib import Path
 from streamlit.web import cli as st_cli
 
 
-def main() -> None:
+def main(port: int | None = None) -> None:
     app_path = Path(__file__).resolve().parent / "app.py"
-    sys.argv = ["streamlit", "run", str(app_path)]
+    argv = ["streamlit", "run", str(app_path)]
+    if port is not None:
+        argv.extend(["--server.port", str(port)])
+    sys.argv = argv
     sys.exit(st_cli.main())
 
 
