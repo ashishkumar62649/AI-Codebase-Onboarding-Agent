@@ -19,8 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2026-07-14
 
-*Release date placeholder — will be updated when the v0.1.0 tag is created.*
-
 ### Added
 
 - **CLI commands:** `deeporra index` (full repository indexing pipeline), `deeporra status` (active index state and counts), `deeporra doctor` (environment health diagnostics), `deeporra mcp` (MCP stdio server), `deeporra dashboard` (Streamlit dashboard)

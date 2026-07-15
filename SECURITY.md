@@ -6,15 +6,11 @@ to localhost only. No repository code is uploaded to any server.
 
 ## Supported Versions
 
-Before v0.1.0, the current `main` branch is pre-release. After v0.1.0, the
-latest released minor version is the supported line unless this policy is
-updated.
-
 | Version | Supported |
 |---------|-----------|
-| latest release | Yes |
-| older releases | No |
-| main (pre-release) | Best-effort — no patch commitment |
+| v0.1.x | Yes |
+| < v0.1.0 | No |
+| main (development) | Best-effort — no patch commitment |
 
 ## Reporting a Vulnerability
 

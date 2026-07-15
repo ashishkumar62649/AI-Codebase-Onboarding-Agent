@@ -53,11 +53,24 @@ DeepOrra does not upload indexed source code to hosted services. After the depen
 - **Streamlit dashboard** — human inspection of indexed repositories
 - **Secret handling** — sensitive files are excluded and detected secrets are redacted according to DeepOrra's scanner rules
 
+## Status
+
+**GitHub Release v0.1.0 is available.** Registry publication (PyPI) is
+intentionally deferred. Source installation is currently supported.
+
 ## Quick Start
 
 ```bash
-# Install from source
-pip install -e .
+# Clone the repository
+git clone https://github.com/ashishkumar62649/deeporra.git
+cd deeporra
+
+# Create and activate a virtual environment (Windows)
+python -m venv .venv
+.venv\Scripts\activate
+
+# Install the package
+python -m pip install .
 
 # Check environment health
 python -m deeporra doctor /path/to/repo
@@ -73,6 +86,12 @@ python -m deeporra.mcp_server
 
 # Start the Streamlit dashboard
 python -m deeporra.dashboard
+```
+
+On Unix, activate the virtual environment with:
+
+```bash
+source .venv/bin/activate
 ```
 
 If the package console script is on your PATH, you can also use `deeporra` directly:
@@ -118,6 +137,15 @@ python -m deeporra doctor [repo_path]
 ```
 
 Runs offline health checks: Python version, required imports, SQLite FTS5 availability, local embedding model presence, directory writability, and config file parsing.
+
+### Setup (Deferred)
+
+```bash
+python -m deeporra setup
+```
+
+The `setup` command is deferred and planned for a future release. It currently
+prints a notice and exits with code 2.
 
 ## MCP Server
 
@@ -246,9 +274,13 @@ The authoritative documentation for contributors is `AGENTS.md` and `docs/01_CON
 - CI/CD integration
 - Broader platform support (macOS, Linux)
 
-## Contributing
+## Get Help
 
-Contributions are welcome. See the development section above and the documentation in `docs/` for implementation details. Please open an issue first for significant changes.
+- **GitHub Issues** — report bugs, ask questions, and share reproducible
+  problems at
+  [https://github.com/ashishkumar62649/deeporra/issues](https://github.com/ashishkumar62649/deeporra/issues)
+- **Security issues** — use GitHub private vulnerability reporting. Do not
+  put vulnerability details in a public issue. See [SECURITY.md](SECURITY.md).
 
 ## Security
 
@@ -267,3 +299,7 @@ DeepOrra is licensed under the [MIT License](https://github.com/ashishkumar62649
 ## Project Status
 
 DeepOrra is in early development (v0.1.0). The indexing pipeline, CLI commands, MCP server, and dashboard are functional but the API and data format may change in breaking ways before 1.0.0. Test thoroughly before relying on persisted indexes across versions.
+
+---
+
+**Maintainer:** Ashish Kumar
