@@ -17,41 +17,67 @@ concurrency:
 jobs:
   verify:
     runs-on: windows-latest
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install ".[dev]"
+          python -m pip check
+      - name: Runtime diagnostics
+        run: |
+          python --version
+          python -m pip --version
+          python -m pip check
+          python -c "import torch; print('torch', torch.__version__)"
+          python -c "import sentence_transformers; print('sentence-transformers import OK')"
+          python -c "import transformers; print('transformers import OK')"
+          python -c "import mcp; print('mcp import OK')"
+          python -c "import streamlit; print('streamlit', streamlit.__version__)"
+          python -c "import chromadb; print('chromadb import OK')"
+          python -c "import deeporra; print('deeporra', deeporra.__version__)"
+        env:
+          HF_HUB_OFFLINE: 1
+          TRANSFORMERS_OFFLINE: 1
+          TOKENIZERS_PARALLELISM: false
       - name: Verify compilation
         run: python -m compileall -q deeporra
         env:
           HF_HUB_OFFLINE: 1
           TRANSFORMERS_OFFLINE: 1
+          TOKENIZERS_PARALLELISM: false
       - name: Check test collection
         run: python -m pytest --collect-only -q
         env:
           HF_HUB_OFFLINE: 1
           TRANSFORMERS_OFFLINE: 1
+          TOKENIZERS_PARALLELISM: false
       - name: Run tests
         run: python -m pytest -q -ra
         env:
           HF_HUB_OFFLINE: 1
           TRANSFORMERS_OFFLINE: 1
+          TOKENIZERS_PARALLELISM: false
       - name: Doctor (console script)
         run: deeporra doctor
         env:
           HF_HUB_OFFLINE: 1
           TRANSFORMERS_OFFLINE: 1
+          TOKENIZERS_PARALLELISM: false
       - name: Doctor (module)
         run: python -m deeporra doctor
         env:
           HF_HUB_OFFLINE: 1
           TRANSFORMERS_OFFLINE: 1
+          TOKENIZERS_PARALLELISM: false
