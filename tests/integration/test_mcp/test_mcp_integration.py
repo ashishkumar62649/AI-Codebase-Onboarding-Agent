@@ -280,6 +280,17 @@ def test_source_files_unchanged(indexed_repo):
     assert before == after
 
 
+def _is_only_broken_resource_error(exc):
+    """Return True when *exc* is a BrokenResourceError (direct or
+    recursively inside an ExceptionGroup) — False otherwise, so the
+    caller can re-raise unexpected exceptions."""
+    if isinstance(exc, anyio.BrokenResourceError):
+        return True
+    if hasattr(exc, "exceptions"):
+        return all(_is_only_broken_resource_error(e) for e in exc.exceptions)
+    return False
+
+
 @pytest.mark.asyncio
 async def test_hybrid_search_stdio_cold_and_warm(indexed_repo, tmp_path):
     """Real stdio server keeps semantic hybrid search available without downloads."""
@@ -326,5 +337,6 @@ async def test_hybrid_search_stdio_cold_and_warm(indexed_repo, tmp_path):
                 results = json.loads(cold.content[0].text)
                 assert results and results[0]["semantic_score"] is not None
                 assert results[0]["combined_score"] is not None
-    except* anyio.BrokenResourceError:
-        pass
+    except BaseException as _exc:
+        if not _is_only_broken_resource_error(_exc):
+            raise
