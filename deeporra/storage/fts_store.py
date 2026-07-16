@@ -79,8 +79,14 @@ class FTSStore:
     # ── Rebuild ─────────────────────────────────────────────────────────────
 
     def rebuild_all(self, conn: sqlite3.Connection) -> None:
-        conn.execute("INSERT INTO chunks_fts(chunks_fts) VALUES('rebuild')")
-        conn.execute("INSERT INTO symbols_fts(symbols_fts) VALUES('rebuild')")
+        conn.execute(
+            "INSERT INTO chunks_fts(rowid, content, symbol_name, file_path) "
+            "SELECT rowid, content, symbol_name, file_path FROM chunks"
+        )
+        conn.execute(
+            "INSERT INTO symbols_fts(rowid, name, qualified_name) "
+            "SELECT rowid, name, qualified_name FROM symbols"
+        )
 
     # ── Count operations ────────────────────────────────────────────────────
 

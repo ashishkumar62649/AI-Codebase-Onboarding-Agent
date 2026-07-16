@@ -4,6 +4,7 @@ import json
 import os
 import sqlite3
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Optional
 
 from deeporra.contracts.models import IndexRunResult, IndexStatusRecord
@@ -105,7 +106,15 @@ class SQLiteStore:
         row = self._conn.execute(
             "SELECT id FROM repositories WHERE path = ?", (path,)
         ).fetchone()
-        return row["id"] if row else None
+        if row:
+            return row["id"]
+        norm_path = str(Path(path).resolve())
+        if norm_path != path:
+            row = self._conn.execute(
+                "SELECT id FROM repositories WHERE path = ?", (norm_path,)
+            ).fetchone()
+            return row["id"] if row else None
+        return None
 
     def create_repository_and_status(
         self, path: str, content_hash: Optional[str] = None
@@ -113,9 +122,10 @@ class SQLiteStore:
         import uuid
         repo_id = str(uuid.uuid4())
         now = _utcnow()
+        norm_path = str(Path(path).resolve())
         self._conn.execute(
             "INSERT INTO repositories (id, path, content_hash, indexed_at) VALUES (?, ?, ?, ?)",
-            (repo_id, path, content_hash, now),
+            (repo_id, norm_path, content_hash, now),
         )
         self._conn.execute(
             "INSERT INTO index_status (repo_id, status, started_at) VALUES (?, 'pending', ?)",
