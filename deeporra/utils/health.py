@@ -58,6 +58,14 @@ def check_sqlite_fts5() -> DoctorCheck:
 
 
 def check_local_embedding_model() -> DoctorCheck:
+    import os
+    if os.environ.get("HF_HUB_OFFLINE") or os.environ.get("TRANSFORMERS_OFFLINE"):
+        return DoctorCheck(
+            "local_embedding_model",
+            True,
+            "Local embedding model check skipped (offline environment).",
+            DiagnosticSeverity.WARNING,
+        )
     try:
         from deeporra.embeddings import EmbeddingEncoder
 
