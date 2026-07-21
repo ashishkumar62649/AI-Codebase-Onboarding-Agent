@@ -1,6 +1,7 @@
 # DeepOrra CI — single Python 3.12, Windows, offline mode
 # This workflow runs tests, compilation checks, and doctor diagnostics.
 # The embedding model check skips in offline CI environments (HF_HUB_OFFLINE=1).
+# Note: GitGuardian and Vercel integrations may show as "queued" — these are external checks.
 name: CI
 
 on:
