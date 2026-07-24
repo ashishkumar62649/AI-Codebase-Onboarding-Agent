@@ -277,8 +277,7 @@ The authoritative documentation for contributors is `AGENTS.md` and `docs/01_CON
 
 ## Get Help
 
-- **GitHub Issues** — report bugs, ask questions, and share reproducible
-  problems at
+- **GitHub Issues** — report bugs, ask questions, and share reproducible problems at
   [https://github.com/ashishkumar62649/deeporra/issues](https://github.com/ashishkumar62649/deeporra/issues)
 - **Security issues** — use GitHub private vulnerability reporting. Do not
   put vulnerability details in a public issue. See [SECURITY.md](SECURITY.md).
